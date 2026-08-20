@@ -2,73 +2,85 @@
 
 import React, { useState } from "react";
 
-// استخدام روابط فيديو موثوقة ومباشرة تعمل على جميع متصفحات الهواتف
+// قوالب الذكاء الاصطناعي الجاهزة
+const AI_TEMPLATES = [
+  { id: "t1", title: "إعلان منتج سينمائي", category: "إعلانات", icon: "💎", prompt: "A sleek 3D cinematic commercial showcase of a luxury product, studio lighting, 8k resolution, photorealistic." },
+  { id: "t2", title: "أنمي ياباني احترافي", category: "أنمي", icon: "⚔️", prompt: "An epic anime battle scene with glowing neon magic effects, Makoto Shinkai style, vibrant colors, highly detailed." },
+  { id: "t3", title: "قصة رعب وتشويق", category: "سينمائي", icon: "👻", prompt: "A dark mystery cinematic scene in a foggy ancient forest, volumetric light, dramatic shadows, movie trailer style." },
+  { id: "t4", title: "مدينة المستقبل 2099", category: "خيال علمي", icon: "🚀", prompt: "A futuristic cyberpunk city with flying cars and holographic ads at night, Unreal Engine 5 render, hyper-detailed." },
+];
+
+// فيديوهات المشاهد والرائجة
 const INITIAL_VIDEOS = [
-  {
-    id: "1",
-    title: "مشهد سينمائي: الفضاء الرقمي",
-    poster: "https://images.pexels.com/photos/33041/antelope-canyon-lower-canyon-arizona.jpg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://vjs.zencdn.net/v/oceans.mp4",
-  },
-  {
-    id: "2",
-    title: "مدينة المستقبل 4K",
-    poster: "https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
-  },
-  {
-    id: "3",
-    title: "محارب الأسطورة سينمائي",
-    poster: "https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://interaction-design.org/videos/sample.mp4",
-  },
-  {
-    id: "4",
-    title: "طبيعة ساحرة وخيال",
-    poster: "https://images.pexels.com/photos/15286/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://vjs.zencdn.net/v/oceans.mp4",
-  },
+  { id: "1", title: "مشهد سينمائي: الأعماق", poster: "https://images.pexels.com/photos/33041/antelope-canyon-lower-canyon-arizona.jpg?auto=compress&cs=tinysrgb&w=800", videoUrl: "https://vjs.zencdn.net/v/oceans.mp4" },
+  { id: "2", title: "مدينة المستقبل 4K", poster: "https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?auto=compress&cs=tinysrgb&w=800", videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4" },
+  { id: "3", title: "محارب الأسطورة سينمائي", poster: "https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=800", videoUrl: "https://interaction-design.org/videos/sample.mp4" },
+  { id: "4", title: "طبيعة ساحرة وخيال", poster: "https://images.pexels.com/photos/15286/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=800", videoUrl: "https://vjs.zencdn.net/v/oceans.mp4" },
 ];
 
 export default function Page() {
-  const [userPlan, setUserPlan] = useState<"FREE" | "VIP">("VIP");
-  const [activeTab, setActiveTab] = useState<"home" | "shorts" | "upload" | "profile">("home");
-  const [activeCategory, setActiveCategory] = useState("الكل");
+  const [userPlan, setUserPlan] = useState<"FREE" | "VIP">("FREE");
+  const [activeTab, setActiveTab] = useState<"home" | "templates" | "create" | "profile">("home");
+  const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [isPayOpen, setIsPayOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [promptText, setPromptText] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const categories = [
-    { name: "الكل", icon: "★" },
-    { name: "سينمائي", icon: "🎬" },
-    { name: "رائج", icon: "🔥" },
-    { name: "خيال", icon: "🪐" },
-    { name: "طبيعة", icon: "🏔️" },
-  ];
+  // حقول الدفع
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+
+  const handleApplyTemplate = (prompt: string) => {
+    setPromptText(prompt);
+    setIsCreateOpen(true);
+  };
+
+  const handleGenerateAI = () => {
+    if (!promptText) return alert("الرجاء كتابة وصف المشهد أولاً!");
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+      setIsCreateOpen(false);
+      setSelectedVideo("https://vjs.zencdn.net/v/oceans.mp4");
+      alert("تم توليد المشهد السينمائي بنجاح! 🎉");
+    }, 3000);
+  };
+
+  const handlePayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cardNumber || !cardExpiry || !cardCvc) {
+      alert("يرجى إكمال تفاصيل البطاقة بشكل صحيح!");
+      return;
+    }
+    setUserPlan("VIP");
+    setIsPayOpen(false);
+    alert("تم تفعيل اشتراك VIP بنجاح! استمتع بتحميل غير محدود ودقة 4K 🔥");
+  };
 
   return (
     <main className="min-h-screen bg-[#090713] text-white dir-rtl font-sans pb-24 relative selection:bg-purple-500">
       
-      {/* 1. الهيدر */}
+      {/* 1. الهيدر العلوي */}
       <header className="sticky top-0 z-40 bg-[#090713]/80 backdrop-blur-md px-4 py-3 flex justify-between items-center border-b border-purple-900/20">
         <div className="flex items-center gap-3">
-          <button className="text-xl text-purple-200">☰</button>
-          <div className="flex flex-col">
-            <span className="font-black text-lg tracking-wider bg-gradient-to-r from-purple-400 via-fuchsia-300 to-pink-500 bg-clip-text text-transparent">
-              VIDEXA AI
-            </span>
-            <span className="text-[7px] text-purple-400 tracking-widest -mt-1 font-semibold uppercase">
-              AI Cinema Studio
-            </span>
-          </div>
+          <span className="font-black text-lg bg-gradient-to-r from-purple-400 via-fuchsia-300 to-pink-500 bg-clip-text text-transparent">
+            VIDEXA AI
+          </span>
         </div>
 
         <button
           onClick={() => setIsPayOpen(true)}
-          className="flex items-center gap-1 bg-gradient-to-r from-purple-800 to-pink-600 border border-purple-400/30 px-3 py-1 rounded-full text-[10px] font-bold shadow-lg"
+          className={`flex items-center gap-1 border px-3 py-1 rounded-full text-[10px] font-bold shadow-lg transition-all ${
+            userPlan === "VIP"
+              ? "bg-gradient-to-r from-amber-500 to-purple-600 border-amber-400/50 text-white"
+              : "bg-gradient-to-r from-purple-800 to-pink-600 border-purple-400/30 text-white"
+          }`}
         >
-          <span>✨</span>
-          <span>{userPlan === "VIP" ? "VIP ACTIVE" : "VIP"}</span>
+          <span>👑</span>
+          <span>{userPlan === "VIP" ? "عضوية VIP مفعلة" : "ترقية إلى VIP"}</span>
         </button>
       </header>
 
@@ -78,66 +90,59 @@ export default function Page() {
         <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-gradient-to-b from-purple-900/40 to-black p-5 shadow-2xl">
           <div className="relative z-10 space-y-3">
             <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-100 to-fuchsia-300">
-              حَوِّل فكرتك إلى <br /> مشهد سينمائي
+              صانع الفيديوهات بالذكاء الاصطناعي
             </h2>
-            <p className="text-[10px] text-purple-200/70 max-w-[200px] leading-relaxed">
-              اكتب قصتك، اختر الأسلوب، ودع Videxa AI يصنع السحر.
+            <p className="text-[10px] text-purple-200/70 max-w-[220px]">
+              اختر قالبك المفضل أو اكتب نصاً، ودع الذكاء الاصطناعي يبني مشهدك خلال ثوانٍ.
             </p>
 
             <button
               onClick={() => setIsCreateOpen(true)}
               className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 px-5 py-2 rounded-xl text-xs font-black shadow-lg shadow-purple-600/30 flex items-center gap-2"
             >
-              <span>إنشاء فيديو</span>
+              <span>+ إنشاء فيديو جديد</span>
               <span>✨</span>
             </button>
-
-            <div className="flex gap-2 pt-2">
-              <div className="bg-black/60 border border-purple-500/20 px-3 py-1 rounded-lg text-center">
-                <p className="text-[9px] font-black text-purple-300">4K</p>
-                <p className="text-[6px] text-zinc-400">ULTRA HD</p>
-              </div>
-              <div className="bg-black/60 border border-purple-500/20 px-3 py-1 rounded-lg text-center">
-                <p className="text-[9px] font-black text-purple-300">24</p>
-                <p className="text-[6px] text-zinc-400">FPS</p>
-              </div>
-              <div className="bg-black/60 border border-purple-500/20 px-3 py-1 rounded-lg text-center">
-                <p className="text-[9px] font-black text-purple-300">AI</p>
-                <p className="text-[6px] text-zinc-400">POWERED</p>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* 3. شريط التصنيفات */}
-        <div className="flex justify-between items-center overflow-x-auto gap-2 scrollbar-none py-1">
-          {categories.map((cat) => (
-            <button
-              key={cat.name}
-              onClick={() => setActiveCategory(cat.name)}
-              className={`flex flex-col items-center gap-1 min-w-[60px] py-2 rounded-xl text-xs transition-all ${
-                activeCategory === cat.name
-                  ? "bg-purple-600/40 text-purple-200 border border-purple-500/60 shadow-lg"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              <span className="text-base">{cat.icon}</span>
-              <span className="text-[9px] font-bold">{cat.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* 4. كروت المشاهد */}
+        {/* 3. قسم القوالب الجاهزة (Templates) */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-black text-purple-100">الفيديوهات والقوالب الرائجة</h3>
-            <span className="text-[10px] text-purple-400">متجدد تلقائياً 🔄</span>
+            <h3 className="text-sm font-black text-purple-100">🎬 القوالب السينمائية الجاهزة</h3>
+            <span className="text-[10px] text-purple-400">اختر واستخدم فوراً</span>
           </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {AI_TEMPLATES.map((tmpl) => (
+              <div
+                key={tmpl.id}
+                onClick={() => handleApplyTemplate(tmpl.prompt)}
+                className="bg-purple-950/20 border border-purple-800/30 p-3 rounded-xl hover:border-purple-500/80 cursor-pointer transition-all space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">{tmpl.icon}</span>
+                  <span className="text-[8px] bg-purple-900/60 px-2 py-0.5 rounded text-purple-300">
+                    {tmpl.category}
+                  </span>
+                </div>
+                <h4 className="text-[11px] font-bold text-purple-100">{tmpl.title}</h4>
+                <p className="text-[8px] text-zinc-400 line-clamp-2">{tmpl.prompt}</p>
+                <button className="w-full text-center bg-purple-600/30 text-purple-200 text-[8px] py-1 rounded border border-purple-500/20 font-bold">
+                  تطبيق القالب⚡
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. كروت المشاهد والفيديوهات */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-black text-purple-100">🔥 الفيديوهات والمشاهد الشائعة</h3>
 
           <div className="grid grid-cols-2 gap-3">
             {INITIAL_VIDEOS.map((vid) => (
               <div key={vid.id} className="bg-zinc-950 border border-purple-900/30 rounded-2xl overflow-hidden relative shadow-lg flex flex-col justify-between">
-                
                 <div 
                   onClick={() => setSelectedVideo(vid.videoUrl)}
                   className="relative aspect-[9/14] bg-cover bg-center cursor-pointer group"
@@ -148,9 +153,6 @@ export default function Page() {
                       ▶
                     </div>
                   </div>
-                  <span className="absolute top-2 right-2 bg-purple-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded">
-                    4K
-                  </span>
                 </div>
 
                 <div className="p-2 space-y-1 bg-zinc-950">
@@ -167,28 +169,9 @@ export default function Page() {
           </div>
         </div>
 
-        {/* 5. بانر VIP */}
-        <div className="bg-gradient-to-r from-purple-950 via-fuchsia-950 to-purple-950 border border-purple-500/40 p-4 rounded-2xl flex justify-between items-center shadow-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 flex items-center justify-center text-lg">
-              👑
-            </div>
-            <div>
-              <h4 className="text-xs font-black text-amber-300">ترقية إلى VIP</h4>
-              <p className="text-[8px] text-purple-300/80">تحميل غير محدود • جودة 4K</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsPayOpen(true)}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-black px-3.5 py-2 rounded-xl shadow-md"
-          >
-            ترقية الآن
-          </button>
-        </div>
-
       </div>
 
-      {/* 6. مشغل الفيديو في نافذة منبثقة مع تشغيل تلقائي بدعم جميع المتصفحات */}
+      {/* 5. مشغل الفيديو المنبثق */}
       {selectedVideo && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
           <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border border-purple-500/50 bg-black p-2">
@@ -198,28 +181,110 @@ export default function Page() {
             >
               ✕
             </button>
-            <video
-              src={selectedVideo}
-              controls
-              autoPlay
-              playsInline
-              className="w-full h-auto max-h-[70vh] rounded-xl"
-            />
+            <video src={selectedVideo} controls autoPlay playsInline className="w-full h-auto max-h-[70vh] rounded-xl" />
           </div>
         </div>
       )}
 
-      {/* 7. شريط التنقل السفلي */}
+      {/* 6. نافذة إنشاء وتوليد الفيديو */}
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0f0a1c] border border-purple-500/40 p-5 rounded-2xl max-w-xs w-full space-y-4">
+            <h3 className="text-base font-black text-purple-200 text-center">صناعة مشهد سينمائي ✨</h3>
+            <textarea
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              placeholder="اكتب وصف المشهد باللغة العربية أو الإنجليزية..."
+              className="w-full h-28 bg-black/60 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none resize-none"
+            />
+            <button
+              onClick={handleGenerateAI}
+              disabled={isGenerating}
+              className="w-full py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 rounded-xl font-bold text-xs text-white shadow-lg flex items-center justify-center gap-2"
+            >
+              {isGenerating ? (
+                <span>جاري معالجة الفيديو والذكاء الاصطناعي... ⏳</span>
+              ) : (
+                <span>توليد الفيديو الآن 🚀</span>
+              )}
+            </button>
+            <button onClick={() => setIsCreateOpen(false)} className="w-full text-center text-[10px] text-zinc-500">إلغاء</button>
+          </div>
+        </div>
+      )}
+
+      {/* 7. نافذة نموذج الدفع بالبطاقات البنكية (Payment Gateway) */}
+      {isPayOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0f0a1c] border-2 border-purple-500/50 p-6 rounded-2xl max-w-xs w-full space-y-4">
+            <div className="text-center space-y-1">
+              <h3 className="text-lg font-black text-amber-400">اشتراك VIP السينمائي 👑</h3>
+              <p className="text-[10px] text-purple-200/80">توليد غير محدود • دقة 4K • بدون علامة مائية</p>
+              <div className="text-2xl font-black text-white pt-1">$9.99 <span className="text-xs text-zinc-400">/ شهرياً</span></div>
+            </div>
+
+            <form onSubmit={handlePayment} className="space-y-3">
+              <div>
+                <label className="text-[9px] text-zinc-400 block mb-1">رقم البطاقة (Visa / Mastercard)</label>
+                <input
+                  type="text"
+                  placeholder="4000 0000 0000 0000"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  className="w-full bg-black/60 border border-purple-500/30 rounded-lg p-2 text-xs text-white outline-none"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <div className="w-1/2">
+                  <label className="text-[9px] text-zinc-400 block mb-1">تاريخ الانتهاء</label>
+                  <input
+                    type="text"
+                    placeholder="MM/YY"
+                    value={cardExpiry}
+                    onChange={(e) => setCardExpiry(e.target.value)}
+                    className="w-full bg-black/60 border border-purple-500/30 rounded-lg p-2 text-xs text-white outline-none"
+                    required
+                  />
+                </div>
+                <div className="w-1/2">
+                  <label className="text-[9px] text-zinc-400 block mb-1">رمز الأمان (CVC)</label>
+                  <input
+                    type="text"
+                    placeholder="123"
+                    value={cardCvc}
+                    onChange={(e) => setCardCvc(e.target.value)}
+                    className="w-full bg-black/60 border border-purple-500/30 rounded-lg p-2 text-xs text-white outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-gradient-to-r from-amber-500 via-purple-600 to-pink-600 rounded-xl font-black text-xs text-white shadow-lg mt-2"
+              >
+                تأكيد وبدء الاشتراك الآمن 💳
+              </button>
+            </form>
+
+            <button onClick={() => setIsPayOpen(false)} className="block w-full text-center text-[10px] text-zinc-500">إلغاء</button>
+          </div>
+        </div>
+      )}
+
+      {/* 8. شريط التنقل السفلي */}
       <nav className="fixed bottom-0 inset-x-0 bg-[#090713]/90 backdrop-blur-lg border-t border-purple-900/30 py-2 px-6 z-40 max-w-md mx-auto">
         <div className="flex justify-between items-center relative">
-          <button onClick={() => setActiveTab("home")} className={`flex flex-col items-center gap-0.5 ${activeTab === "home" ? "text-fuchsia-400" : "text-zinc-500"}`}>
+          <button onClick={() => setActiveTab("home")} className={`flex flex-col items-center ${activeTab === "home" ? "text-fuchsia-400" : "text-zinc-500"}`}>
             <span className="text-base">🏠</span>
             <span className="text-[8px] font-bold">الرئيسية</span>
           </button>
 
-          <button onClick={() => setActiveTab("shorts")} className={`flex flex-col items-center gap-0.5 ${activeTab === "shorts" ? "text-fuchsia-400" : "text-zinc-500"}`}>
+          <button onClick={() => setIsCreateOpen(true)} className="flex flex-col items-center text-zinc-500">
             <span className="text-base">🎬</span>
-            <span className="text-[8px] font-bold">Shorts</span>
+            <span className="text-[8px] font-bold">توليد</span>
           </button>
 
           <div className="-mt-7">
@@ -230,53 +295,17 @@ export default function Page() {
             </button>
           </div>
 
-          <button onClick={() => setIsCreateOpen(true)} className="flex flex-col items-center gap-0.5 text-zinc-500">
-            <span className="text-base">☁️</span>
-            <span className="text-[8px] font-bold">رفع</span>
+          <button onClick={() => setIsPayOpen(true)} className="flex flex-col items-center text-zinc-500">
+            <span className="text-base">💳</span>
+            <span className="text-[8px] font-bold">الاشتراك</span>
           </button>
 
-          <button onClick={() => setActiveTab("profile")} className={`flex flex-col items-center gap-0.5 ${activeTab === "profile" ? "text-fuchsia-400" : "text-zinc-500"}`}>
+          <button onClick={() => setActiveTab("profile")} className={`flex flex-col items-center ${activeTab === "profile" ? "text-fuchsia-400" : "text-zinc-500"}`}>
             <span className="text-base">👤</span>
             <span className="text-[8px] font-bold">حسابي</span>
           </button>
         </div>
       </nav>
-
-      {/* نافذة الإنشاء */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f0a1c] border border-purple-500/40 p-5 rounded-2xl max-w-xs w-full space-y-4 text-center">
-            <h3 className="text-base font-black text-purple-200">صناعة مشهد بالذكاء الاصطناعي ✨</h3>
-            <textarea placeholder="اكتب وصف المشهد..." className="w-full h-24 bg-black/60 border border-purple-500/30 rounded-xl p-3 text-xs text-white outline-none resize-none" />
-            <button onClick={() => setIsCreateOpen(false)} className="w-full py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 rounded-xl font-bold text-xs text-white shadow-lg">
-              توليد المشهد الآن ✨
-            </button>
-            <button onClick={() => setIsCreateOpen(false)} className="text-[10px] text-zinc-500">إلغاء</button>
-          </div>
-        </div>
-      )}
-
-      {/* نافذة الدفع */}
-      {isPayOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f0a1c] border-2 border-purple-500/50 p-6 rounded-2xl max-w-xs w-full text-center space-y-4">
-            <h3 className="text-lg font-black text-amber-400">اشتراك VIDEXA VIP 👑</h3>
-            <p className="text-[10px] text-purple-200/80">توليد سينمائي غير محدود وبدون إعلانات!</p>
-            <div className="text-2xl font-black text-white">$9.99 <span className="text-xs text-zinc-400">/ شهرياً</span></div>
-            <button
-              onClick={() => {
-                setUserPlan("VIP");
-                alert("تم تفعيل اشتراك VIP بنجاح! ✨");
-                setIsPayOpen(false);
-              }}
-              className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-xs text-white shadow-lg"
-            >
-              تأكيد الاشتراك السريع 💳
-            </button>
-            <button onClick={() => setIsPayOpen(false)} className="block w-full text-[10px] text-zinc-500 pt-1">إلغاء</button>
-          </div>
-        </div>
-      )}
 
     </main>
   );
