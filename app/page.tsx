@@ -125,7 +125,9 @@ export default function VidexaProPlatform() {
         {feedData.map((item, index) => (
           <section key={item.id} className="h-screen w-full relative snap-start">
             <video
-              ref={(el) => (videoRefs.current[index] = el)}
+              ref={(el: HTMLVideoElement | null) => {
+                videoRefs.current[index] = el;
+              }}
               src={item.videoUrl}
               autoPlay
               loop
