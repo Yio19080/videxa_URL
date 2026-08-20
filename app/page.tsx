@@ -2,102 +2,53 @@
 
 import React, { useState, useEffect } from "react";
 
-// مقاطع فيديو احتياطية لضمان عمل الواجهة دائماً حتى لو فشل الـ API
-const FALLBACK_VIDEOS = [
+// مقاطع فيديو صور مع روابط فيديو شغال 100%
+const INITIAL_VIDEOS = [
   {
     id: "1",
     title: "مشهد سينمائي: الفضاء الرقمي",
-    poster: "https://images.pexels.com/photos/33041/antelope-canyon-lower-canyon-arizona.jpg",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-1610-large.mp4",
-    duration: "02:15",
-    views: "18.4K",
-    likesCount: "2.1K",
+    poster: "https://images.pexels.com/photos/33041/antelope-canyon-lower-canyon-arizona.jpg?auto=compress&cs=tinysrgb&w=800",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
   },
   {
     id: "2",
     title: "مدينة المستقبل 4K",
-    poster: "https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-40742-large.mp4",
-    duration: "01:45",
-    views: "25.9K",
-    likesCount: "3.8K",
+    poster: "https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?auto=compress&cs=tinysrgb&w=800",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
   },
   {
     id: "3",
-    title: "طبيعة ساحرة وخيال",
-    poster: "https://images.pexels.com/photos/15286/pexels-photo.jpg",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4",
-    duration: "03:10",
-    views: "12.1K",
-    likesCount: "1.5K",
+    title: "محارب الأسطورة سينمائي",
+    poster: "https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=800",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
   },
   {
     id: "4",
-    title: "محارب الأسطورة سينمائي",
-    poster: "https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-setting-fire-to-a-torch-41526-large.mp4",
-    duration: "02:00",
-    views: "30.2K",
-    likesCount: "4.9K",
+    title: "طبيعة ساحرة وخيال",
+    poster: "https://images.pexels.com/photos/15286/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=800",
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
   },
 ];
 
 export default function Page() {
-  const [userPlan, setUserPlan] = useState<"FREE" | "VIP">("FREE");
+  const [userPlan, setUserPlan] = useState<"FREE" | "VIP">("VIP");
   const [activeTab, setActiveTab] = useState<"home" | "shorts" | "upload" | "profile">("home");
   const [activeCategory, setActiveCategory] = useState("الكل");
   const [isPayOpen, setIsPayOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("cinematic");
-  const [videos, setVideos] = useState<any[]>(FALLBACK_VIDEOS);
-  const [loading, setLoading] = useState(false);
-
-  const PEXELS_API_KEY = process.env.NEXT_PUBLIC_PEXELS_API_KEY || "563492ad6f91700001000001b96d3f23a4b0451db68235e1286c99c3";
-
-  useEffect(() => {
-    const fetchVideos = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `https://api.pexels.com/videos/search?query=${encodeURIComponent(searchQuery)}&per_page=10&orientation=portrait`,
-          { headers: { Authorization: PEXELS_API_KEY } }
-        );
-        const data = await res.json();
-        if (data && data.videos && data.videos.length > 0) {
-          setVideos(
-            data.videos.map((v: any, index: number) => ({
-              id: v.id.toString(),
-              title: v.user?.name ? `مشهد بواسطة ${v.user.name}` : `مشهد سينمائي #${index + 1}`,
-              poster: v.image,
-              videoUrl: v.video_files?.[0]?.link || "",
-              duration: "02:15",
-              views: `${(Math.random() * 20 + 5).toFixed(1)}K`,
-              likesCount: `${(Math.random() * 3 + 1).toFixed(1)}K`,
-            }))
-          );
-        } else {
-          setVideos(FALLBACK_VIDEOS);
-        }
-      } catch (e) {
-        console.error("Fetch Error:", e);
-        setVideos(FALLBACK_VIDEOS);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchVideos();
-  }, [searchQuery, PEXELS_API_KEY]);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
 
   const categories = [
-    { name: "الكل", icon: "★", query: "cinematic" },
-    { name: "سينمائي", icon: "🎬", query: "movie" },
-    { name: "رائج", icon: "🔥", query: "action" },
-    { name: "خيال", icon: "🪐", query: "sci-fi" },
-    { name: "طبيعة", icon: "🏔️", query: "nature" },
+    { name: "الكل", icon: "★" },
+    { name: "سينمائي", icon: "🎬" },
+    { name: "رائج", icon: "🔥" },
+    { name: "خيال", icon: "🪐" },
+    { name: "طبيعة", icon: "🏔️" },
   ];
 
   return (
-    <main className="min-h-screen bg-[#090713] text-white dir-rtl font-sans pb-24 relative">
+    <main className="min-h-screen bg-[#090713] text-white dir-rtl font-sans pb-24 relative selection:bg-purple-500">
+      
       {/* 1. الهيدر */}
       <header className="sticky top-0 z-40 bg-[#090713]/80 backdrop-blur-md px-4 py-3 flex justify-between items-center border-b border-purple-900/20">
         <div className="flex items-center gap-3">
@@ -122,6 +73,7 @@ export default function Page() {
       </header>
 
       <div className="max-w-md mx-auto px-4 space-y-6 pt-3">
+        
         {/* 2. البانر الرئيسي */}
         <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-gradient-to-b from-purple-900/40 to-black p-5 shadow-2xl">
           <div className="relative z-10 space-y-3">
@@ -157,15 +109,12 @@ export default function Page() {
           </div>
         </div>
 
-        {/* 3. التصنيفات */}
+        {/* 3. شريط التصنيفات */}
         <div className="flex justify-between items-center overflow-x-auto gap-2 scrollbar-none py-1">
           {categories.map((cat) => (
             <button
               key={cat.name}
-              onClick={() => {
-                setActiveCategory(cat.name);
-                setSearchQuery(cat.query);
-              }}
+              onClick={() => setActiveCategory(cat.name)}
               className={`flex flex-col items-center gap-1 min-w-[60px] py-2 rounded-xl text-xs transition-all ${
                 activeCategory === cat.name
                   ? "bg-purple-600/40 text-purple-200 border border-purple-500/60 shadow-lg"
@@ -178,7 +127,7 @@ export default function Page() {
           ))}
         </div>
 
-        {/* 4. شبكة الفيديوهات */}
+        {/* 4. كروت المشاهد */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-black text-purple-100">الفيديوهات والقوالب الرائجة</h3>
@@ -186,38 +135,43 @@ export default function Page() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {loading ? (
-              Array(4).fill(0).map((_, i) => (
-                <div key={i} className="aspect-[9/14] bg-purple-950/20 rounded-2xl animate-pulse border border-purple-900/20" />
-              ))
-            ) : (
-              videos.map((vid) => (
-                <div key={vid.id} className="bg-zinc-950 border border-purple-900/30 rounded-2xl overflow-hidden relative shadow-lg">
-                  <div className="relative aspect-[9/14] bg-black">
-                    <video src={vid.videoUrl} poster={vid.poster} controls className="w-full h-full object-cover" />
-                    <span className="absolute top-2 right-2 bg-purple-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded">
-                      4K
-                    </span>
+            {INITIAL_VIDEOS.map((vid) => (
+              <div key={vid.id} className="bg-zinc-950 border border-purple-900/30 rounded-2xl overflow-hidden relative shadow-lg flex flex-col justify-between">
+                
+                {/* بوستر غلاف سينمائي ممتازة بدون أخطاء تحميل */}
+                <div 
+                  onClick={() => setSelectedVideo(vid.videoUrl)}
+                  className="relative aspect-[9/14] bg-cover bg-center cursor-pointer group"
+                  style={{ backgroundImage: `url(${vid.poster})` }}
+                >
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-all flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-purple-600/80 backdrop-blur-md border border-purple-400 flex items-center justify-center text-white text-sm shadow-xl">
+                      ▶
+                    </div>
                   </div>
-                  <div className="p-2 space-y-1">
-                    <p className="text-[9px] font-bold text-purple-100 truncate">{vid.title}</p>
-                    <a
-                      href={vid.videoUrl}
-                      download
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-black py-1 rounded-lg"
-                    >
-                      تحميل المشهد 📥
-                    </a>
-                  </div>
+                  <span className="absolute top-2 right-2 bg-purple-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded">
+                    4K
+                  </span>
                 </div>
-              ))
-            )}
+
+                <div className="p-2 space-y-1 bg-zinc-950">
+                  <p className="text-[9px] font-bold text-purple-100 truncate">{vid.title}</p>
+                  <a
+                    href={vid.videoUrl}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-black py-1.5 rounded-lg shadow"
+                  >
+                    تحميل المشهد 📥
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* 5. بانر الترقية */}
+        {/* 5. بانر VIP */}
         <div className="bg-gradient-to-r from-purple-950 via-fuchsia-950 to-purple-950 border border-purple-500/40 p-4 rounded-2xl flex justify-between items-center shadow-xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 flex items-center justify-center text-lg">
@@ -235,9 +189,25 @@ export default function Page() {
             ترقية الآن
           </button>
         </div>
+
       </div>
 
-      {/* 6. شريط التنقل السفلي */}
+      {/* 6. مشغل الفيديو عند الضغط على أي مشهد */}
+      {selectedVideo && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border border-purple-500/50 bg-black">
+            <button
+              onClick={() => setSelectedVideo(null)}
+              className="absolute top-3 right-3 z-10 bg-black/60 text-white w-8 h-8 rounded-full border border-purple-500/40 flex items-center justify-center text-xs"
+            >
+              ✕
+            </button>
+            <video src={selectedVideo} controls autoPlay className="w-full h-auto max-h-[70vh] rounded-2xl" />
+          </div>
+        </div>
+      )}
+
+      {/* 7. شريط التنقل السفلي */}
       <nav className="fixed bottom-0 inset-x-0 bg-[#090713]/90 backdrop-blur-lg border-t border-purple-900/30 py-2 px-6 z-40 max-w-md mx-auto">
         <div className="flex justify-between items-center relative">
           <button onClick={() => setActiveTab("home")} className={`flex flex-col items-center gap-0.5 ${activeTab === "home" ? "text-fuchsia-400" : "text-zinc-500"}`}>
@@ -270,30 +240,6 @@ export default function Page() {
         </div>
       </nav>
 
-      {/* نافذة الترقية والدفع */}
-      {isPayOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f0a1c] border-2 border-purple-500/50 p-6 rounded-2xl max-w-xs w-full text-center space-y-4">
-            <h3 className="text-lg font-black text-amber-400">اشتراك VIDEXA VIP 👑</h3>
-            <p className="text-[10px] text-purple-200/80">استمتع بتوليد سينمائي غير محدود وبدون إعلانات!</p>
-            <div className="text-2xl font-black text-white">$9.99 <span className="text-xs text-zinc-400">/ شهرياً</span></div>
-            <button
-              onClick={() => {
-                setUserPlan("VIP");
-                alert("تم تفعيل اشتراك VIP بنجاح! ✨");
-                setIsPayOpen(false);
-              }}
-              className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-xs text-white shadow-lg"
-            >
-              تأكيد الاشتراك السريع 💳
-            </button>
-            <button onClick={() => setIsPayOpen(false)} className="block w-full text-[10px] text-zinc-500 pt-1">
-              إلغاء
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* نافذة الإنشاء */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
@@ -307,6 +253,29 @@ export default function Page() {
           </div>
         </div>
       )}
+
+      {/* نافذة الدفع */}
+      {isPayOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0f0a1c] border-2 border-purple-500/50 p-6 rounded-2xl max-w-xs w-full text-center space-y-4">
+            <h3 className="text-lg font-black text-amber-400">اشتراك VIDEXA VIP 👑</h3>
+            <p className="text-[10px] text-purple-200/80">توليد سينمائي غير محدود وبدون إعلانات!</p>
+            <div className="text-2xl font-black text-white">$9.99 <span className="text-xs text-zinc-400">/ شهرياً</span></div>
+            <button
+              onClick={() => {
+                setUserPlan("VIP");
+                alert("تم تفعيل اشتراك VIP بنجاح! ✨");
+                setIsPayOpen(false);
+              }}
+              className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-xs text-white shadow-lg"
+            >
+              تأكيد الاشتراك السريع 💳
+            </button>
+            <button onClick={() => setIsPayOpen(false)} className="block w-full text-[10px] text-zinc-500 pt-1">إلغاء</button>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
