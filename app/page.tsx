@@ -1,32 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
-// مقاطع فيديو صور مع روابط فيديو شغال 100%
+// استخدام روابط فيديو موثوقة ومباشرة تعمل على جميع متصفحات الهواتف
 const INITIAL_VIDEOS = [
   {
     id: "1",
     title: "مشهد سينمائي: الفضاء الرقمي",
     poster: "https://images.pexels.com/photos/33041/antelope-canyon-lower-canyon-arizona.jpg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    videoUrl: "https://vjs.zencdn.net/v/oceans.mp4",
   },
   {
     id: "2",
     title: "مدينة المستقبل 4K",
     poster: "https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
   },
   {
     id: "3",
     title: "محارب الأسطورة سينمائي",
     poster: "https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    videoUrl: "https://interaction-design.org/videos/sample.mp4",
   },
   {
     id: "4",
     title: "طبيعة ساحرة وخيال",
     poster: "https://images.pexels.com/photos/15286/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=800",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    videoUrl: "https://vjs.zencdn.net/v/oceans.mp4",
   },
 ];
 
@@ -138,7 +138,6 @@ export default function Page() {
             {INITIAL_VIDEOS.map((vid) => (
               <div key={vid.id} className="bg-zinc-950 border border-purple-900/30 rounded-2xl overflow-hidden relative shadow-lg flex flex-col justify-between">
                 
-                {/* بوستر غلاف سينمائي ممتازة بدون أخطاء تحميل */}
                 <div 
                   onClick={() => setSelectedVideo(vid.videoUrl)}
                   className="relative aspect-[9/14] bg-cover bg-center cursor-pointer group"
@@ -156,15 +155,12 @@ export default function Page() {
 
                 <div className="p-2 space-y-1 bg-zinc-950">
                   <p className="text-[9px] font-bold text-purple-100 truncate">{vid.title}</p>
-                  <a
-                    href={vid.videoUrl}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-black py-1.5 rounded-lg shadow"
+                  <button
+                    onClick={() => setSelectedVideo(vid.videoUrl)}
+                    className="w-full text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-black py-1.5 rounded-lg shadow"
                   >
-                    تحميل المشهد 📥
-                  </a>
+                    تشغيل المشهد 🎬
+                  </button>
                 </div>
               </div>
             ))}
@@ -192,17 +188,23 @@ export default function Page() {
 
       </div>
 
-      {/* 6. مشغل الفيديو عند الضغط على أي مشهد */}
+      {/* 6. مشغل الفيديو في نافذة منبثقة مع تشغيل تلقائي بدعم جميع المتصفحات */}
       {selectedVideo && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border border-purple-500/50 bg-black">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border border-purple-500/50 bg-black p-2">
             <button
               onClick={() => setSelectedVideo(null)}
-              className="absolute top-3 right-3 z-10 bg-black/60 text-white w-8 h-8 rounded-full border border-purple-500/40 flex items-center justify-center text-xs"
+              className="absolute top-4 right-4 z-20 bg-purple-600 text-white w-8 h-8 rounded-full border border-purple-400 flex items-center justify-center text-xs font-bold"
             >
               ✕
             </button>
-            <video src={selectedVideo} controls autoPlay className="w-full h-auto max-h-[70vh] rounded-2xl" />
+            <video
+              src={selectedVideo}
+              controls
+              autoPlay
+              playsInline
+              className="w-full h-auto max-h-[70vh] rounded-xl"
+            />
           </div>
         </div>
       )}
