@@ -1,103 +1,130 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import PaymentModal from "@/components/PaymentModal";
+import { fetchPexelsVideos } from "@/lib/pexels";
+import { UserRole, VideoItem } from "@/types";
 
 export default function HomePage() {
   const [isPayOpen, setIsPayOpen] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>("FREE");
   const [activeCategory, setActiveCategory] = useState("الكل");
+  const [videos, setVideos] = useState<VideoItem[]>([]);
 
-  const templates = [
-    { id: 1, title: "المحارب السينمائي", category: "سينما", duration: "15s", badge: "4K AI", gradient: "from-purple-600 to-indigo-900" },
-    { id: 2, title: "عالم السايبربنك", category: "ترند", duration: "20s", badge: "TRENDING", gradient: "from-pink-600 to-purple-900" },
-    { id: 3, title: "إعلان تجاري فاخر", category: "بزنس", duration: "30s", badge: "PRO", gradient: "from-blue-600 to-slate-900" },
-    { id: 4, title: "المستقبل الذكي", category: "تعليم", duration: "15s", badge: "4K AI", gradient: "from-cyan-600 to-blue-900" },
-    { id: 5, title: "أساطير الفضاء", category: "سينما", duration: "25s", badge: "HOT", gradient: "from-violet-600 to-fuchsia-900" },
-    { id: 6, title: "نيون سيتي", category: "ترند", duration: "10s", badge: "4K AI", gradient: "from-rose-600 to-purple-900" },
-  ];
+  useEffect(() => {
+    async function loadApiVideos() {
+      const pexelsData = await fetchPexelsVideos("cinematic 4k");
+      if (pexelsData.length > 0) {
+        setVideos(pexelsData);
+      } else {
+        setVideos([
+          { id: "1", title: "المحارب السينمائي", category: "سينما", duration: "15s", badge: "4K AI", poster: "", videoUrl: "" },
+          { id: "2", title: "عالم السايبربنك", category: "ترند", duration: "20s", badge: "TRENDING", poster: "", videoUrl: "" },
+          { id: "3", title: "إعلان تجاري", category: "بزنس", duration: "30s", badge: "PRO", poster: "", videoUrl: "" },
+        ] as any);
+      }
+    }
+    loadApiVideos();
+  }, []);
+
+  const handleVipProtection = (actionName: string) => {
+    if (userRole === "FREE") {
+      setIsPayOpen(true);
+    } else {
+      alert(`تم تنفيذ ${actionName} بنجاح!`);
+    }
+  };
 
   const categories = ["الكل", "ترند", "سينما", "بزنس", "تعليم"];
-
-  const filtered = activeCategory === "الكل" ? templates : templates.filter(t => t.category === activeCategory);
+  const filtered = activeCategory === "الكل" ? videos : videos.filter(t => t.category === activeCategory);
 
   return (
     <main className="min-h-screen bg-[#07090e] text-white dir-rtl font-sans pb-10">
-      <div className="max-w-5xl mx-auto px-4 pt-4 space-y-6">
+      <div className="max-w-5xl mx-auto px-3 pt-3 space-y-4">
         
-        {/* البانر التنبيهي (النسخة المتوسطة) */}
-        <div className="bg-gradient-to-r from-purple-900/60 to-pink-900/60 border border-purple-500/30 rounded-xl p-2.5 text-center text-xs">
-          <span className="font-bold text-pink-400">🔥 تجربة سينمائية 4K مع Videxa – مجاناً بالكامل!</span>
-          <span className="text-slate-300 mr-2">شاهد وحمّل فيديوهات سينمائية بدقة 4K مجاناً 100%.</span>
+        <div className="bg-gradient-to-r from-purple-900/60 to-pink-900/60 border border-purple-500/30 rounded-xl p-2 flex justify-between items-center text-[11px]">
+          <div>
+            <span className="font-bold text-pink-400">حالة الحساب: </span>
+            <span className={userRole === "VIP" ? "text-green-400 font-bold" : "text-yellow-400 font-bold"}>
+              {userRole === "VIP" ? "مشترك VIP ✨" : "مجاني (FREE)"}
+            </span>
+          </div>
+          <button 
+            onClick={() => setUserRole(userRole === "FREE" ? "VIP" : "FREE")}
+            className="text-[9px] bg-white/10 px-2 py-0.5 rounded border border-white/20"
+          >
+            تجربة تبديل الحساب
+          </button>
         </div>
 
-        {/* الهيدر العلوي */}
-        <header className="flex justify-between items-center py-2">
-          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 tracking-wider">
-            VIDEXA AI
-          </h1>
+        <header className="flex justify-between items-center py-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500">
+              VIDEXA AI
+            </h1>
+            <Link href="/shorts" className="text-[10px] bg-pink-600/30 border border-pink-500/50 px-2.5 py-1 rounded-full font-bold">
+              🎬 الشورتس
+            </Link>
+          </div>
+
           <button
             onClick={() => setIsPayOpen(true)}
-            className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-[11px] shadow-[0_0_10px_rgba(219,39,119,0.3)]"
+            className="px-3 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-[10px]"
           >
-            ترقية Pro ✨
+            {userRole === "VIP" ? "عضوية VIP" : "ترقية Pro ✨"}
           </button>
         </header>
 
-        {/* الواجهة الرئيسية (النسخة الطويلة) */}
-        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-black p-5">
-           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 to-black/90 z-0" />
-           <div className="relative z-10 space-y-3">
-              <span className="text-[9px] bg-white/10 px-2.5 py-1 rounded text-cyan-300 font-bold uppercase tracking-widest">
-                مجاني 100% لفترة محدودة
-              </span>
-              <h2 className="text-xl font-black leading-tight text-white">
-                أطلق العنان لإبداعك مع Videxa – فيديوهات سينمائية بدقة 4K مجاناً!
-              </h2>
-              <p className="text-slate-300 text-[11px] leading-relaxed max-w-md">
-                كل فيديو في مكتبتنا متاح حالياً للمشاهدة والتحميل المجاني المباشر 100%. استمتع بدقة 4K السينمائية الفائقة بدون اشتراكات أو رسوم خفية.
-              </p>
-              <button 
-                onClick={() => setIsPayOpen(true)}
-                className="mt-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition duration-300"
-              >
+        <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black p-4">
+           <div className="relative z-10 space-y-2">
+              <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-cyan-300 font-bold">مجاني 100% لفترة محدودة</span>
+              <h2 className="text-base font-black text-white">أطلق العنان لإبداعك مع Videxa – فيديوهات سينمائية 4K!</h2>
+              <button onClick={() => setIsPayOpen(true)} className="px-4 py-1.5 rounded-lg bg-cyan-500 text-black font-bold text-[11px]">
                 👉 ابدأ المشاهدة الآن
               </button>
            </div>
         </div>
 
-        {/* التصنيفات */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
-                activeCategory === cat ? "bg-blue-600 text-white" : "bg-white/5 text-slate-500"
-              }`}
-            >
+            <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${activeCategory === cat ? "bg-blue-600 text-white" : "bg-white/5 text-slate-400"}`}>
               {cat}
             </button>
           ))}
         </div>
 
-        {/* شبكة العرض */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           {filtered.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => setIsPayOpen(true)}
-              className="bg-white/5 border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:border-purple-500/50 transition"
-            >
-              <div className={`aspect-[2/3] bg-gradient-to-br ${item.gradient} p-3 flex flex-col justify-between`}>
-                <span className="text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded w-fit">{item.badge}</span>
-                <div className="bg-black/60 p-2 rounded-lg backdrop-blur-sm">
-                  <h4 className="font-bold text-[11px] text-white truncate">{item.title}</h4>
-                  <p className="text-[9px] text-slate-400">{item.category}</p>
+            <div key={item.id} className="bg-white/5 border border-white/10 rounded-lg overflow-hidden flex flex-col justify-between">
+              <div className="relative aspect-[16/10] bg-black">
+                {item.videoUrl ? <video src={item.videoUrl} poster={item.poster} controls className="w-full h-full object-cover" /> : null}
+                <span className="absolute top-1 right-1 text-[7px] bg-black/70 text-white px-1 rounded font-bold">{item.badge}</span>
+              </div>
+
+              <div className="p-1.5 bg-black/70 space-y-1">
+                <h4 className="font-bold text-[9px] text-white truncate">{item.title}</h4>
+                
+                <div className="flex gap-1">
+                  <button 
+                    onClick={() => handleVipProtection("استخدام القالب")}
+                    className="w-1/2 bg-purple-600/80 text-white text-[7px] font-bold py-0.5 rounded truncate"
+                  >
+                    {userRole === "FREE" ? "🔒 قالب" : "قالب"}
+                  </button>
+
+                  <button 
+                    onClick={() => handleVipProtection("تحميل الفيديو")}
+                    className="w-1/2 bg-cyan-500 text-black text-[7px] font-bold py-0.5 rounded truncate"
+                  >
+                    {userRole === "FREE" ? "🔒 تحميل" : "تحميل"}
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
       </div>
 
       <PaymentModal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} />
