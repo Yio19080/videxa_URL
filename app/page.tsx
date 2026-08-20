@@ -1,21 +1,31 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 
+// مصادر فيديو متعددة واحتياطية لضمان عمل الفيديوهات دائماً بدون مشاكل
+const backupVideoPool = [
+  "https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1186-large.mp4",
+  "https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-screens-and-code-31910-large.mp4",
+  "https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smartphone-with-a-green-screen-42998-large.mp4",
+  "https://assets.mixkit.co/videos/preview/mixkit-futuristic-city-with-flying-vehicles-41581-large.mp4"
+];
+
 const generateLiveFeed = () => {
   return Array.from({ length: 15 }, (_, i) => ({
     id: `v-${i}`,
     type: i % 6 === 0 ? 'AD' : 'VIDEO',
     user: `@creator_${i}`,
-    title: `المشهد السينمائي رقم ${i + 1}`,
-    category: i % 2 === 0 ? "سينمائي" : "أنمي",
+    title: `المشهد الذكي رقم ${i + 1}`,
+    category: i % 2 === 0 ? "ذكاء اصطناعي" : "سينمائي",
     likes: Math.floor(Math.random() * 50000) + 1500,
     comments: Math.floor(Math.random() * 5000) + 150,
     shares: Math.floor(Math.random() * 2000) + 50,
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1186-large.mp4",
+    videoUrl: backupVideoPool[i % backupVideoPool.length],
   }));
 };
 
 export default function VidexaProPlatform() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authInput, setAuthInput] = useState("");
   const [isVip, setIsVip] = useState(false);
   const [feedData, setFeedData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,16 +44,17 @@ export default function VidexaProPlatform() {
     setTimeout(() => {
       setFeedData(generateLiveFeed());
       setIsLoading(false);
-    }, 1500);
+    }, 1200);
   }, []);
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const video = entry.target as HTMLVideoElement;
           if (entry.isIntersecting) {
-            video.play();
+            video.play().catch(() => {});
           } else {
             video.pause();
           }
@@ -57,7 +68,13 @@ export default function VidexaProPlatform() {
     });
 
     return () => observer.disconnect();
-  }, [feedData]);
+  }, [feedData, isLoggedIn]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authInput.trim()) return alert("الرجاء إدخال البريد الإلكتروني أو رقم الهاتف!");
+    setIsLoggedIn(true);
+  };
 
   const handleLike = (id: string) => {
     setLikedVideos((prev) =>
@@ -99,6 +116,32 @@ export default function VidexaProPlatform() {
     }, 2000);
   };
 
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 dir-rtl">
+        <div className="w-full max-w-md bg-zinc-900 border border-white/10 p-8 rounded-3xl shadow-2xl text-center">
+          <h1 className="text-3xl font-black tracking-tighter mb-2">VIDEXA <span className="text-purple-500">AI</span></h1>
+          <p className="text-sm text-zinc-400 mb-8">منصة توليد وعرض الفيديوهات الذكية</p>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <input
+              type="text"
+              value={authInput}
+              onChange={(e) => setAuthInput(e.target.value)}
+              placeholder="البريد الإلكتروني أو رقم الهاتف"
+              className="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500 transition"
+            />
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-4 rounded-2xl font-bold transition hover:opacity-90 active:scale-95"
+            >
+              دخول المنصة 🚀
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <main className="h-screen flex items-center justify-center bg-black text-white">
@@ -109,7 +152,7 @@ export default function VidexaProPlatform() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans dir-rtl">
-      <header className="fixed top-0 w-full z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center">
+      <header className="fixed top-0 w-full z-50 bg-[#050505]/85 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex justify-between items-center">
         <h1 className="text-2xl font-black tracking-tighter">VIDEXA <span className="text-purple-500">AI</span></h1>
         <div className="flex items-center gap-4">
           {isVip ? (
@@ -199,6 +242,7 @@ export default function VidexaProPlatform() {
             <button onClick={() => { setActiveTab("explore"); setIsMenuOpen(false); }}>استكشف</button>
             <button onClick={() => { setActiveTab("profile"); setIsMenuOpen(false); }}>الملف الشخصي</button>
             <button onClick={() => setIsPayOpen(true)} className="text-purple-500">الترقية لـ VIP</button>
+            <button onClick={() => setIsLoggedIn(false)} className="text-red-500">تسجيل الخروج</button>
           </nav>
         </div>
       )}
@@ -233,37 +277,49 @@ export default function VidexaProPlatform() {
             <div className="flex justify-between items-center mb-6">
               <button onClick={() => setIsPayOpen(false)} className="text-zinc-500 hover:text-white transition">✕</button>
             </div>
-            <span className="text-6xl mx-auto mb-4">👑</span>
-            <h3 className="font-black text-2xl mb-2">اشترك في VIDEXA VIP 👑</h3>
-            <p className="text-sm text-zinc-400 mb-8">احصل على تحميل غير محدود، وأولوية توليد الذكاء الاصطناعي.</p>
+            <span className="text-5xl mx-auto mb-3 block">👑</span>
+            <h3 className="font-black text-2xl mb-1">اشترك في VIDEXA VIP</h3>
+            <p className="text-xs text-zinc-400 mb-6">اختر طريقة الدفع المناسبة، وحول إلى الحسابات أدناه:</p>
             
-            <div className="flex flex-col gap-4 mb-8">
-              <button 
-                onClick={() => processPayment("SDG")}
-                className="bg-white text-black p-4 rounded-2xl font-bold flex justify-between items-center hover:bg-zinc-200 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <span>💳</span> البنك المحلي
+            <div className="flex flex-col gap-4 mb-6 text-right">
+              {/* خيار البنك المحلي */}
+              <div className="bg-black/50 border border-white/10 p-4 rounded-2xl">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-bold text-sm">💳 البنك المحلي</span>
+                  <span className="text-purple-400 font-bold text-sm">35,000 SDG</span>
                 </div>
-                <span>35,000 SDG</span>
-              </button>
-              
-              <button 
-                onClick={() => processPayment("USDT")}
-                className="bg-purple-600 text-white p-4 rounded-2xl font-bold flex justify-between items-center hover:bg-purple-700 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <span>💎</span> بايننس
+                <p className="text-xs text-zinc-400">رقم الحساب: <span className="text-white select-all font-mono">1234567890123</span></p>
+                <p className="text-xs text-zinc-400">اسم الحساب: يوسف إبراهيم</p>
+                <button 
+                  onClick={() => processPayment("SDG")}
+                  className="w-full mt-3 bg-white text-black py-2 rounded-xl text-xs font-bold hover:bg-zinc-200 transition"
+                >
+                  تأكيد التحويل المحلي
+                </button>
+              </div>
+
+              {/* خيار بايننس USDT */}
+              <div className="bg-black/50 border border-white/10 p-4 rounded-2xl">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-bold text-sm">💎 بايننس (USDT)</span>
+                  <span className="text-purple-400 font-bold text-sm">10 USDT</span>
                 </div>
-                <span>10 USDT</span>
-              </button>
+                <p className="text-xs text-zinc-400">معرف المحفظة (UID): <span className="text-white select-all font-mono">987654321</span></p>
+                <p className="text-xs text-zinc-400">الشبكة: TRC20</p>
+                <button 
+                  onClick={() => processPayment("USDT")}
+                  className="w-full mt-3 bg-purple-600 text-white py-2 rounded-xl text-xs font-bold hover:bg-purple-700 transition"
+                >
+                  تأكيد تحويل بايننس
+                </button>
+              </div>
             </div>
             
             {selectedPlan && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
                 <div className="text-center">
-                  <span className="text-6xl mx-auto mb-4 animate-bounce">✅</span>
-                  <h3 className="font-bold text-xl">جاري معالجة الدفع...</h3>
+                  <span className="text-6xl mx-auto mb-4 block animate-bounce">✅</span>
+                  <h3 className="font-bold text-xl">جاري التحقق من عملية الدفع...</h3>
                 </div>
               </div>
             )}
