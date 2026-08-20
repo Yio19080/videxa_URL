@@ -22,9 +22,15 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#07090e] text-white dir-rtl font-sans pb-10">
-      <div className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 pt-4 space-y-6">
         
-        {/* Header */}
+        {/* البانر التنبيهي (النسخة المتوسطة) */}
+        <div className="bg-gradient-to-r from-purple-900/60 to-pink-900/60 border border-purple-500/30 rounded-xl p-2.5 text-center text-xs">
+          <span className="font-bold text-pink-400">🔥 تجربة سينمائية 4K مع Videxa – مجاناً بالكامل!</span>
+          <span className="text-slate-300 mr-2">شاهد وحمّل فيديوهات سينمائية بدقة 4K مجاناً 100%.</span>
+        </div>
+
+        {/* الهيدر العلوي */}
         <header className="flex justify-between items-center py-2">
           <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 tracking-wider">
             VIDEXA AI
@@ -37,23 +43,29 @@ export default function HomePage() {
           </button>
         </header>
 
-        {/* Hero Section */}
+        {/* الواجهة الرئيسية (النسخة الطويلة) */}
         <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-black p-5">
            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 to-black/90 z-0" />
-           <div className="relative z-10 space-y-2">
-              <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-cyan-300 font-bold uppercase tracking-widest">
-                العرض السينمائي
+           <div className="relative z-10 space-y-3">
+              <span className="text-[9px] bg-white/10 px-2.5 py-1 rounded text-cyan-300 font-bold uppercase tracking-widest">
+                مجاني 100% لفترة محدودة
               </span>
               <h2 className="text-xl font-black leading-tight text-white">
-                عالم الذكاء الاصطناعي الفائق 4K
+                أطلق العنان لإبداعك مع Videxa – فيديوهات سينمائية بدقة 4K مجاناً!
               </h2>
-              <p className="text-slate-400 text-[10px] leading-relaxed max-w-xs">
-                أنشئ مقاطع فيديو مذهلة بدقة وسرعة بدعم من أحدث نماذج توليد الميديا.
+              <p className="text-slate-300 text-[11px] leading-relaxed max-w-md">
+                كل فيديو في مكتبتنا متاح حالياً للمشاهدة والتحميل المجاني المباشر 100%. استمتع بدقة 4K السينمائية الفائقة بدون اشتراكات أو رسوم خفية.
               </p>
+              <button 
+                onClick={() => setIsPayOpen(true)}
+                className="mt-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition duration-300"
+              >
+                👉 ابدأ المشاهدة الآن
+              </button>
            </div>
         </div>
 
-        {/* Categories */}
+        {/* التصنيفات */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {categories.map((cat) => (
             <button
@@ -68,13 +80,13 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Grid */}
+        {/* شبكة العرض */}
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((item) => (
             <div
               key={item.id}
               onClick={() => setIsPayOpen(true)}
-              className="bg-white/5 border border-white/5 rounded-xl overflow-hidden"
+              className="bg-white/5 border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:border-purple-500/50 transition"
             >
               <div className={`aspect-[2/3] bg-gradient-to-br ${item.gradient} p-3 flex flex-col justify-between`}>
                 <span className="text-[9px] bg-black/50 text-white px-1.5 py-0.5 rounded w-fit">{item.badge}</span>
