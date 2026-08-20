@@ -1,5 +1,4 @@
 "use client";
-import React, { useState, useEffect, useRef } from "p-react"; // استخدام React العادي
 import React, { useState, useEffect, useRef } from "react";
 
 // توليد 30 قالب متنوع
@@ -63,7 +62,7 @@ export default function Page() {
       })) || [];
 
       if (formatted.length === 0 || pageNumber >= 5) {
-        setHasMore(false); // إيقاف التحميل لو وصلنا لحد معين
+        setHasMore(false);
       }
 
       setVideos(prev => [...prev, ...formatted]);
@@ -205,7 +204,7 @@ export default function Page() {
             ))}
           </div>
 
-          {/* عنصر المراقبة للتحميل الكسول (Intersection Observer Target) */}
+          {/* عنصر المراقبة للتحميل الكسول */}
           <div ref={observerRef} className="py-6 text-center">
             {loading && <p className="text-xs text-purple-300 animate-pulse">جاري تحميل المزيد من المشاهد... ⏳</p>}
             {!hasMore && <p className="text-[10px] text-zinc-500">تم عرض جميع الفيديوهات المتاحة ✨</p>}
@@ -258,4 +257,3 @@ export default function Page() {
     </main>
   );
 }
-
