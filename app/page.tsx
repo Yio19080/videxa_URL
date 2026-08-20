@@ -1,34 +1,34 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import PaymentModal from "@/components/PaymentModal";
-import { fetchPexelsVideos } from "@/lib/pexels";
-import { UserRole, VideoItem } from "@/types";
+import React, { useState } from "react";
+
+export type UserRole = "FREE" | "VIP";
 
 export default function HomePage() {
-  const [isPayOpen, setIsPayOpen] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>("FREE");
+  const [activeTab, setActiveTab] = useState<"home" | "shorts">("home");
   const [activeCategory, setActiveCategory] = useState("الكل");
-  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [isPayOpen, setIsPayOpen] = useState(false);
 
-  useEffect(() => {
-    async function loadApiVideos() {
-      const pexelsData = await fetchPexelsVideos("cinematic 4k");
-      if (pexelsData.length > 0) {
-        setVideos(pexelsData);
-      } else {
-        setVideos([
-          { id: "1", title: "المحارب السينمائي", category: "سينما", duration: "15s", badge: "4K AI", poster: "", videoUrl: "" },
-          { id: "2", title: "عالم السايبربنك", category: "ترند", duration: "20s", badge: "TRENDING", poster: "", videoUrl: "" },
-          { id: "3", title: "إعلان تجاري", category: "بزنس", duration: "30s", badge: "PRO", poster: "", videoUrl: "" },
-        ] as any);
-      }
-    }
-    loadApiVideos();
-  }, []);
+  // قائمة الفيديوهات المصغرة للواجهة الرئيسية
+  const videos = [
+    { id: "1", title: "المحارب السينمائي", category: "سينما", badge: "4K AI", gradient: "from-purple-900 to-indigo-950", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" },
+    { id: "2", title: "عالم السايبربنك", category: "ترند", badge: "TRENDING", gradient: "from-pink-900 to-purple-950", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
+    { id: "3", title: "إعلان تجاري", category: "بزنس", badge: "PRO", gradient: "from-blue-900 to-slate-950", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" },
+    { id: "4", title: "المستقبل الذكي", category: "تعليم", badge: "4K AI", gradient: "from-cyan-900 to-blue-950", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" },
+    { id: "5", title: "أساطير الفضاء", category: "سينما", badge: "HOT", gradient: "from-violet-900 to-fuchsia-950", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
+    { id: "6", title: "نيون سيتي", category: "ترند", badge: "4K AI", gradient: "from-rose-900 to-purple-950", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" },
+  ];
 
-  const handleVipProtection = (actionName: string) => {
+  // قائمة فيديو الشورتس (تيك توك)
+  const shorts = [
+    { id: "s1", user: "@cyber_ai", caption: "عالم السايبربنك والذكاء الاصطناعي 🚀 #Videxa #Shorts", likes: "1.4K", comments: "95", shares: "30", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", isAd: false },
+    { id: "s2", user: "@cinema_pro", caption: "مشاهد سينمائية احترافية #Cinema #Videxa", likes: "2.8K", comments: "110", shares: "60", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", isAd: false },
+    { id: "s3", user: "إعلان Videxa PRO 🚀", caption: "اشترك الآن في VIP وافتح التحميل المباشر والقوالب بدون إعلانات!", likes: "5.4K", comments: "20", shares: "100", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4", isAd: true },
+  ];
+
+  // دالة حماية التحميل والقوالب للمستخدم المجاني
+  const handleVipAction = (actionName: string) => {
     if (userRole === "FREE") {
       setIsPayOpen(true);
     } else {
@@ -41,8 +41,57 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#07090e] text-white dir-rtl font-sans pb-10">
+      
+      {/* قسم الشورتس (تيك توك) */}
+      {activeTab === "shorts" ? (
+        <div className="fixed inset-0 z-50 bg-black flex justify-center items-center">
+          <button 
+            onClick={() => setActiveTab("home")}
+            className="absolute top-4 right-4 z-50 bg-black/60 border border-white/20 text-white px-3 py-1 rounded-full text-xs font-bold"
+          >
+            ✕ خروج للرئيسية
+          </button>
+
+          <div className="h-full w-full max-w-md snap-y snap-mandatory overflow-y-scroll scrollbar-none">
+            {shorts.map((item) => (
+              <div key={item.id} className="h-full w-full snap-start relative flex items-center justify-center bg-zinc-950">
+                <video src={item.videoUrl} loop autoPlay muted playsInline className="w-full h-full object-cover" />
+
+                {item.isAd && (
+                  <span className="absolute top-4 left-4 bg-yellow-500 text-black font-black text-[10px] px-2 py-0.5 rounded">
+                    إعلان SPONSORED
+                  </span>
+                )}
+
+                <div className="absolute left-3 bottom-20 flex flex-col items-center gap-4 z-20">
+                  <button className="flex flex-col items-center">
+                    <span className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm">❤️</span>
+                    <span className="text-[10px] font-bold mt-1">{item.likes}</span>
+                  </button>
+                  <button className="flex flex-col items-center">
+                    <span className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm">💬</span>
+                    <span className="text-[10px] font-bold mt-1">{item.comments}</span>
+                  </button>
+                  <button className="flex flex-col items-center">
+                    <span className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm">🔗</span>
+                    <span className="text-[10px] font-bold mt-1">{item.shares}</span>
+                  </button>
+                </div>
+
+                <div className="absolute bottom-6 right-3 left-16 z-20 text-right dir-rtl">
+                  <h3 className="font-bold text-xs text-cyan-400">{item.user}</h3>
+                  <p className="text-[11px] text-slate-200 line-clamp-2 mt-0.5">{item.caption}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* الواجهة الرئيسية */}
       <div className="max-w-5xl mx-auto px-3 pt-3 space-y-4">
         
+        {/* شريط تجربة العضوية */}
         <div className="bg-gradient-to-r from-purple-900/60 to-pink-900/60 border border-purple-500/30 rounded-xl p-2 flex justify-between items-center text-[11px]">
           <div>
             <span className="font-bold text-pink-400">حالة الحساب: </span>
@@ -54,18 +103,22 @@ export default function HomePage() {
             onClick={() => setUserRole(userRole === "FREE" ? "VIP" : "FREE")}
             className="text-[9px] bg-white/10 px-2 py-0.5 rounded border border-white/20"
           >
-            تجربة تبديل الحساب
+            تبديل الحساب للتجربة
           </button>
         </div>
 
+        {/* الهيدر */}
         <header className="flex justify-between items-center py-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <h1 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500">
               VIDEXA AI
             </h1>
-            <Link href="/shorts" className="text-[10px] bg-pink-600/30 border border-pink-500/50 px-2.5 py-1 rounded-full font-bold">
+            <button 
+              onClick={() => setActiveTab("shorts")}
+              className="text-[10px] bg-pink-600/30 border border-pink-500/50 px-2 py-1 rounded-full font-bold text-pink-300"
+            >
               🎬 الشورتس
-            </Link>
+            </button>
           </div>
 
           <button
@@ -76,6 +129,7 @@ export default function HomePage() {
           </button>
         </header>
 
+        {/* الكرت الترويجي */}
         <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black p-4">
            <div className="relative z-10 space-y-2">
               <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-cyan-300 font-bold">مجاني 100% لفترة محدودة</span>
@@ -86,19 +140,25 @@ export default function HomePage() {
            </div>
         </div>
 
+        {/* التصنيفات */}
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {categories.map((cat) => (
-            <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-3 py-1 rounded-lg text-[10px] font-bold ${activeCategory === cat ? "bg-blue-600 text-white" : "bg-white/5 text-slate-400"}`}>
+            <button 
+              key={cat} 
+              onClick={() => setActiveCategory(cat)} 
+              className={`px-3 py-1 rounded-lg text-[10px] font-bold ${activeCategory === cat ? "bg-blue-600 text-white" : "bg-white/5 text-slate-400"}`}
+            >
               {cat}
             </button>
           ))}
         </div>
 
+        {/* شبكة الكروت المصغرة (3 كروت بالسطر) مع الحماية */}
         <div className="grid grid-cols-3 gap-2">
           {filtered.map((item) => (
             <div key={item.id} className="bg-white/5 border border-white/10 rounded-lg overflow-hidden flex flex-col justify-between">
-              <div className="relative aspect-[16/10] bg-black">
-                {item.videoUrl ? <video src={item.videoUrl} poster={item.poster} controls className="w-full h-full object-cover" /> : null}
+              <div className={`relative aspect-[16/10] bg-gradient-to-br ${item.gradient} overflow-hidden`}>
+                <video src={item.videoUrl} controls className="w-full h-full object-cover" />
                 <span className="absolute top-1 right-1 text-[7px] bg-black/70 text-white px-1 rounded font-bold">{item.badge}</span>
               </div>
 
@@ -107,14 +167,14 @@ export default function HomePage() {
                 
                 <div className="flex gap-1">
                   <button 
-                    onClick={() => handleVipProtection("استخدام القالب")}
+                    onClick={() => handleVipAction("استخدام القالب")}
                     className="w-1/2 bg-purple-600/80 text-white text-[7px] font-bold py-0.5 rounded truncate"
                   >
                     {userRole === "FREE" ? "🔒 قالب" : "قالب"}
                   </button>
 
                   <button 
-                    onClick={() => handleVipProtection("تحميل الفيديو")}
+                    onClick={() => handleVipAction("تحميل الفيديو")}
                     className="w-1/2 bg-cyan-500 text-black text-[7px] font-bold py-0.5 rounded truncate"
                   >
                     {userRole === "FREE" ? "🔒 تحميل" : "تحميل"}
@@ -127,7 +187,24 @@ export default function HomePage() {
 
       </div>
 
-      <PaymentModal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} />
+      {/* نافذة الترقية */}
+      {isPayOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4 dir-rtl">
+          <div className="bg-slate-900 border border-purple-500/40 p-5 rounded-2xl max-w-xs w-full text-center space-y-3">
+            <h3 className="text-base font-bold text-white">اشترك في Videxa VIP ✨</h3>
+            <p className="text-[11px] text-slate-300">احصل على صلاحية تحميل الفيديوهات واستخدام القوالب بدون حدود وبدون إعلانات!</p>
+            <div className="text-xl font-black text-pink-500">$9.99 / شهرياً</div>
+            <button 
+              onClick={() => { setUserRole("VIP"); setIsPayOpen(false); alert("تم الترقية إلى VIP بنجاح!"); }}
+              className="w-full py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs"
+            >
+              الدفع عبر Stripe / PayPal
+            </button>
+            <button onClick={() => setIsPayOpen(false)} className="text-[10px] text-slate-400 block mx-auto">إلغاء</button>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
