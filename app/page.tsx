@@ -24,31 +24,20 @@ type VideoItem = {
   shares: number;
 };
 
+// تم توسيع القوالب وتحديثها لتكون مرنة ومتجددة
 const CATEGORIES = [
-  {
-    name: "الرئيسية",
-    icon: "🏠",
-  },
-  {
-    name: "تقنية",
-    icon: "💻",
-  },
-  {
-    name: "سفر",
-    icon: "✈️",
-  },
-  {
-    name: "رياضة",
-    icon: "⚽",
-  },
-  {
-    name: "ترفيه",
-    icon: "🎬",
-  },
-  {
-    name: "ذكاء اصطناعي",
-    icon: "🤖",
-  },
+  { name: "الرئيسية", icon: "🏠" },
+  { name: "تقنية", icon: "💻" },
+  { name: "سفر", icon: "✈️" },
+  { name: "رياضة", icon: "⚽" },
+  { name: "ترفيه", icon: "🎬" },
+  { name: "ذكاء اصطناعي", icon: "🤖" },
+  { name: "تصاميم", icon: "🎨" },
+  { name: "طبيعة", icon: "🌿" },
+  { name: "سيارات", icon: "🏎️" },
+  { name: "أخبار", icon: "📰" },
+  { name: "تطوير مهارات", icon: "💡" },
+  { name: "ألعاب", icon: "🎮" },
 ];
 
 const USDT_ADDRESS =
@@ -265,6 +254,7 @@ export default function Page() {
     loadVideos(1, true);
   }, [category]);
 
+  // إصلاح مشكلة تشغيل وإيقاف الفيديوهات بسلاسة عند التمرير
   useEffect(() => {
     const observer =
       new IntersectionObserver(
@@ -282,25 +272,28 @@ export default function Page() {
                   .catch(() => {});
               } else {
                 video.pause();
+                video.currentTime = 0;
               }
             }
           );
         },
         {
-          threshold: 0.65,
+          threshold: 0.6,
         }
       );
 
+    const currentVideoRefs = videoRefs.current;
     Object.values(
-      videoRefs.current
+      currentVideoRefs
     ).forEach((video) => {
       if (video) {
         observer.observe(video);
       }
     });
 
-    return () =>
+    return () => {
       observer.disconnect();
+    };
   }, [videos]);
 
   const handleScroll = (
@@ -587,7 +580,6 @@ export default function Page() {
                 muted
                 loop
                 playsInline
-                autoPlay
                 preload="metadata"
                 className="h-full w-full object-cover"
               />
@@ -1067,4 +1059,4 @@ export default function Page() {
       )}
     </main>
   );
-            }
+}
