@@ -1,88 +1,53 @@
 "use client";
 
 import React, {
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
 
-type Video = {
-  id: string;
+type VideoItem = {
+  id: number;
   title: string;
-  user: string;
-  category: string;
+  creator: string;
+  creatorUrl: string;
+  sourceUrl: string;
   videoUrl: string;
+  poster: string;
+  width: number;
+  height: number;
+  duration: number;
+  category: string;
   likes: number;
   comments: number;
   shares: number;
 };
 
-const VIDEO_SOURCES: Video[] = [
+const CATEGORIES = [
   {
-    id: "v1",
-    title: "تجربة فيديو سينمائية",
-    user: "@videxa_creator",
-    category: "تقنية",
-    videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    likes: 12400,
-    comments: 324,
-    shares: 810,
+    name: "الرئيسية",
+    icon: "🏠",
   },
   {
-    id: "v2",
-    title: "اكتشف العالم بطريقة مختلفة",
-    user: "@travel_creator",
-    category: "سفر",
-    videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    likes: 18200,
-    comments: 540,
-    shares: 1200,
+    name: "تقنية",
+    icon: "💻",
   },
   {
-    id: "v3",
-    title: "لحظات ممتعة بتقنية سينمائية",
-    user: "@fun_creator",
-    category: "منوعات",
-    videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    likes: 9700,
-    comments: 210,
-    shares: 450,
+    name: "سفر",
+    icon: "✈️",
   },
   {
-    id: "v4",
-    title: "رحلة جديدة تبدأ الآن",
-    user: "@life_creator",
-    category: "حياة",
-    videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    likes: 22100,
-    comments: 690,
-    shares: 1600,
+    name: "رياضة",
+    icon: "⚽",
   },
   {
-    id: "v5",
-    title: "تجربة مختلفة تمامًا",
-    user: "@creator_pro",
-    category: "تجارب",
-    videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    likes: 14300,
-    comments: 430,
-    shares: 930,
+    name: "ترفيه",
+    icon: "🎬",
   },
   {
-    id: "v6",
-    title: "See the world",
-    user: "@videxa_world",
-    category: "Travel",
-    videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackSeeTheWorld.mp4",
-    likes: 31500,
-    comments: 920,
-    shares: 2400,
+    name: "ذكاء اصطناعي",
+    icon: "🤖",
   },
 ];
 
@@ -95,18 +60,33 @@ const BANKAK_NAME =
 const BANKAK_ACCOUNT =
   "9412190";
 
-const USDT_PRICE = 10;
 const BANKAK_PRICE = 35000;
+const USDT_PRICE = 10;
 
 export default function Page() {
   const [videos, setVideos] =
-    useState<Video[]>(VIDEO_SOURCES);
+    useState<VideoItem[]>([]);
 
-  const [activeVideo, setActiveVideo] =
-    useState(0);
+  const [category, setCategory] =
+    useState("الرئيسية");
 
-  const [likedVideos, setLikedVideos] =
-    useState<string[]>([]);
+  const [page, setPage] =
+    useState(1);
+
+  const [hasMore, setHasMore] =
+    useState(true);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadingMore, setLoadingMore] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [liked, setLiked] =
+    useState<number[]>([]);
 
   const [menuOpen, setMenuOpen] =
     useState(false);
@@ -118,7 +98,9 @@ export default function Page() {
     useState(false);
 
   const [paymentMethod, setPaymentMethod] =
-    useState<"USDT" | "BANKAK">("USDT");
+    useState<"USDT" | "BANKAK">(
+      "USDT"
+    );
 
   const [vip, setVip] =
     useState(false);
@@ -129,120 +111,289 @@ export default function Page() {
   const [generating, setGenerating] =
     useState(false);
 
-  const [copied, setCopied] =
-    useState("");
-
   const [bankakReference, setBankakReference] =
     useState("");
 
+  const [copied, setCopied] =
+    useState("");
+
+  const loadingRef =
+    useRef(false);
+
+  const seenIds =
+    useRef<Set<number>>(
+      new Set()
+    );
+
   const videoRefs =
-    useRef<(HTMLVideoElement | null)[]>([]);
+    useRef<
+      Record<
+        number,
+        HTMLVideoElement | null
+      >
+    >({});
+
+  const loadVideos = useCallback(
+    async (
+      targetPage: number,
+      replace = false
+    ) => {
+      if (
+        loadingRef.current
+      ) {
+        return;
+      }
+
+      if (
+        !replace &&
+        !hasMore
+      ) {
+        return;
+      }
+
+      loadingRef.current = true;
+
+      if (replace) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      try {
+        const response =
+          await fetch(
+            `/api/videos?category=${encodeURIComponent(
+              category
+            )}&page=${targetPage}`,
+            {
+              cache: "no-store",
+            }
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP ${response.status}`
+          );
+        }
+
+        const data =
+          await response.json();
+
+        const incoming =
+          (data.videos || [])
+            .filter(
+              (video: VideoItem) => {
+                if (
+                  seenIds.current.has(
+                    video.id
+                  )
+                ) {
+                  return false;
+                }
+
+                seenIds.current.add(
+                  video.id
+                );
+
+                return true;
+              }
+            )
+            .map(
+              (
+                video: VideoItem
+              ) => ({
+                ...video,
+                likes:
+                  Math.floor(
+                    Math.random() *
+                      30000
+                  ) + 500,
+
+                comments:
+                  Math.floor(
+                    Math.random() *
+                      1500
+                  ) + 30,
+
+                shares:
+                  Math.floor(
+                    Math.random() *
+                      3000
+                  ) + 20,
+              })
+            );
+
+        setVideos((current) =>
+          replace
+            ? incoming
+            : [
+                ...current,
+                ...incoming,
+              ]
+        );
+
+        setPage(targetPage);
+
+        setHasMore(
+          Boolean(data.hasMore)
+        );
+
+        setError("");
+      } catch (err) {
+        console.error(err);
+
+        setError(
+          "تعذر تحميل الفيديوهات. حاول مرة أخرى."
+        );
+      } finally {
+        loadingRef.current = false;
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [category, hasMore]
+  );
+
+  useEffect(() => {
+    seenIds.current.clear();
+
+    setVideos([]);
+    setPage(1);
+    setHasMore(true);
+    setError("");
+
+    loadVideos(1, true);
+  }, [category]);
 
   useEffect(() => {
     const observer =
       new IntersectionObserver(
         (entries) => {
-          entries.forEach((entry) => {
-            const video =
-              entry.target as HTMLVideoElement;
+          entries.forEach(
+            (entry) => {
+              const video =
+                entry.target as HTMLVideoElement;
 
-            if (entry.isIntersecting) {
-              video.play().catch(() => {});
-            } else {
-              video.pause();
+              if (
+                entry.isIntersecting
+              ) {
+                video
+                  .play()
+                  .catch(() => {});
+              } else {
+                video.pause();
+              }
             }
-          });
+          );
         },
         {
-          threshold: 0.7,
+          threshold: 0.65,
         }
       );
 
-    videoRefs.current.forEach((video) => {
+    Object.values(
+      videoRefs.current
+    ).forEach((video) => {
       if (video) {
         observer.observe(video);
       }
     });
 
-    return () => {
+    return () =>
       observer.disconnect();
-    };
-  }, []);
+  }, [videos]);
 
-  const likeVideo = (id: string) => {
-    setLikedVideos((current) => {
-      if (current.includes(id)) {
-        return current.filter(
-          (item) => item !== id
-        );
-      }
+  const handleScroll = (
+    event: React.UIEvent<HTMLDivElement>
+  ) => {
+    const element =
+      event.currentTarget;
 
-      return [...current, id];
-    });
+    const distance =
+      element.scrollHeight -
+      element.scrollTop -
+      element.clientHeight;
+
+    if (
+      distance <
+        element.clientHeight *
+          2 &&
+      !loadingRef.current &&
+      hasMore
+    ) {
+      loadVideos(page + 1);
+    }
+  };
+
+  const toggleLike = (
+    video: VideoItem
+  ) => {
+    const isLiked =
+      liked.includes(video.id);
+
+    setLiked((current) =>
+      isLiked
+        ? current.filter(
+            (id) =>
+              id !== video.id
+          )
+        : [
+            ...current,
+            video.id,
+          ]
+    );
 
     setVideos((current) =>
-      current.map((video) => {
-        if (video.id !== id) {
-          return video;
-        }
-
-        const alreadyLiked =
-          likedVideos.includes(id);
-
-        return {
-          ...video,
-          likes: alreadyLiked
-            ? Math.max(0, video.likes - 1)
-            : video.likes + 1,
-        };
-      })
+      current.map((item) =>
+        item.id === video.id
+          ? {
+              ...item,
+              likes:
+                item.likes +
+                (isLiked
+                  ? -1
+                  : 1),
+            }
+          : item
+      )
     );
   };
 
-  const copyValue = async (
-    value: string,
-    name: string
+  const shareVideo = async (
+    video: VideoItem
   ) => {
     try {
-      await navigator.clipboard.writeText(
-        value
-      );
+      if (
+        navigator.share
+      ) {
+        await navigator.share(
+          {
+            title:
+              "VIDEXA AI",
+            text:
+              "شاهد هذا الفيديو على VIDEXA AI",
+            url:
+              video.sourceUrl,
+          }
+        );
+      } else {
+        await navigator.clipboard.writeText(
+          video.sourceUrl
+        );
 
-      setCopied(name);
+        setCopied("share");
 
-      setTimeout(() => {
-        setCopied("");
-      }, 2000);
-    } catch {
-      alert(
-        "تعذر النسخ. انسخ الرقم يدويًا."
-      );
-    }
-  };
-
-  const shareVideo = async (
-    video: Video
-  ) => {
-    const url = video.videoUrl;
-
-    if (
-      typeof navigator !== "undefined" &&
-      navigator.share
-    ) {
-      try {
-        await navigator.share({
-          title: video.title,
-          text: video.title,
-          url,
-        });
-      } catch {}
-    } else {
-      copyValue(url, "share");
-    }
+        setTimeout(
+          () =>
+            setCopied(""),
+          1500
+        );
+      }
+    } catch {}
   };
 
   const downloadVideo = (
-    video: Video
+    video: VideoItem
   ) => {
     if (!vip) {
       setPaymentOpen(true);
@@ -256,6 +407,24 @@ export default function Page() {
     );
   };
 
+  const copyText = async (
+    value: string,
+    type: string
+  ) => {
+    try {
+      await navigator.clipboard.writeText(
+        value
+      );
+
+      setCopied(type);
+
+      setTimeout(
+        () => setCopied(""),
+        1500
+      );
+    } catch {}
+  };
+
   const generateVideo = async () => {
     if (!prompt.trim()) {
       alert(
@@ -266,61 +435,90 @@ export default function Page() {
 
     setGenerating(true);
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1800)
+    await new Promise(
+      (resolve) =>
+        setTimeout(
+          resolve,
+          1800
+        )
     );
 
     setGenerating(false);
     setCreateOpen(false);
-    setPrompt("");
 
     alert(
-      "تم استلام طلب إنشاء الفيديو. لربط التوليد الحقيقي، اربط هذا الزر لاحقًا بمحرك الفيديو AI الخاص بك."
+      "تم استلام طلب إنشاء الفيديو. يمكن ربطه بمحرك توليد الفيديو AI لاحقًا."
     );
+
+    setPrompt("");
   };
 
-  const submitBankak = () => {
-    if (!bankakReference.trim()) {
+  const sendBankakPayment = () => {
+    if (
+      !bankakReference.trim()
+    ) {
       alert(
-        "أدخل رقم العملية بعد التحويل."
+        "أدخل رقم العملية."
       );
       return;
     }
 
     alert(
-      "تم تسجيل طلب الدفع للمراجعة. لا يتم تفعيل VIP تلقائيًا بدون التحقق من التحويل."
+      "تم إرسال بيانات العملية للمراجعة."
     );
 
     setBankakReference("");
   };
 
+  if (loading) {
+    return (
+      <main
+        dir="rtl"
+        className="flex min-h-screen items-center justify-center bg-black text-white"
+      >
+        <div className="text-center">
+          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
+
+          <h1 className="mt-5 text-3xl font-black">
+            VIDEXA{" "}
+            <span className="text-purple-500">
+              AI
+            </span>
+          </h1>
+
+          <p className="mt-2 text-xs text-zinc-500">
+            جاري تحميل الفيديوهات...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-[#050505] text-white"
+      className="min-h-screen bg-black text-white"
     >
-      {/* HEADER */}
-
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/70 px-4 py-3 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-black/80 px-4 py-3 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <button
             onClick={() =>
               setMenuOpen(true)
             }
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xl"
+            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-2xl"
           >
             ☰
           </button>
 
           <div className="text-center">
-            <h1 className="text-2xl font-black tracking-tight">
+            <h1 className="text-3xl font-black">
               VIDEXA{" "}
               <span className="text-purple-500">
                 AI
               </span>
             </h1>
 
-            <p className="text-[9px] tracking-[4px] text-zinc-500">
+            <p className="text-[9px] tracking-[5px] text-zinc-500">
               CREATE • WATCH • SHARE
             </p>
           </div>
@@ -329,7 +527,7 @@ export default function Page() {
             onClick={() =>
               setPaymentOpen(true)
             }
-            className={`rounded-full px-4 py-2 text-xs font-black ${
+            className={`rounded-full px-5 py-3 text-xs font-black ${
               vip
                 ? "bg-amber-400 text-black"
                 : "bg-gradient-to-r from-purple-600 to-pink-600"
@@ -337,120 +535,127 @@ export default function Page() {
           >
             {vip
               ? "👑 VIP"
-              : "✨ ترقية"}
+              : "ترقية ✨"}
           </button>
         </div>
       </header>
 
-      {/* CATEGORY BAR */}
-
-      <div className="fixed top-[74px] left-0 right-0 z-40 overflow-x-auto bg-black/50 px-4 py-3 backdrop-blur-lg">
+      <div className="fixed left-0 right-0 top-[88px] z-40 overflow-x-auto border-b border-white/5 bg-black/80 px-3 py-4 backdrop-blur-xl">
         <div className="flex min-w-max justify-center gap-2">
-          {[
-            "الرئيسية",
-            "تقنية",
-            "سفر",
-            "رياضة",
-            "ترفيه",
-            "ذكاء اصطناعي",
-          ].map((category, index) => (
-            <button
-              key={category}
-              className={`rounded-full px-4 py-2 text-xs font-bold ${
-                index === 0
-                  ? "bg-white text-black"
-                  : "bg-white/10 text-white"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+          {CATEGORIES.map(
+            (item) => (
+              <button
+                key={item.name}
+                onClick={() =>
+                  setCategory(
+                    item.name
+                  )
+                }
+                className={`rounded-full px-5 py-3 text-xs font-bold ${
+                  category ===
+                  item.name
+                    ? "bg-white text-black"
+                    : "bg-white/10"
+                }`}
+              >
+                {item.icon}{" "}
+                {item.name}
+              </button>
+            )
+          )}
         </div>
       </div>
 
-      {/* VIDEO FEED */}
-
-      <section className="h-screen snap-y snap-mandatory overflow-y-scroll">
+      <div
+        onScroll={handleScroll}
+        className="h-screen snap-y snap-mandatory overflow-y-auto"
+      >
         {videos.map(
-          (video, index) => (
-            <article
+          (video) => (
+            <section
               key={video.id}
-              className="relative h-screen w-full snap-start snap-always overflow-hidden bg-black"
+              className="relative h-screen w-full snap-start overflow-hidden bg-black"
             >
               <video
                 ref={(element) => {
-                  videoRefs.current[index] =
-                    element;
+                  videoRefs.current[
+                    video.id
+                  ] = element;
                 }}
                 src={video.videoUrl}
+                poster={video.poster}
                 muted
                 loop
                 playsInline
-                autoPlay={index === 0}
-                preload={
-                  index < 2
-                    ? "auto"
-                    : "metadata"
-                }
-                onPlay={() =>
-                  setActiveVideo(index)
-                }
+                autoPlay
+                preload="metadata"
                 className="h-full w-full object-cover"
               />
 
-              {/* GRADIENT */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20" />
 
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
+              <a
+                href={
+                  video.sourceUrl
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="absolute left-4 top-28 rounded-full bg-black/60 px-4 py-2 text-[9px] text-zinc-300 backdrop-blur"
+              >
+                فيديو من Pexels ↗
+              </a>
 
-              {/* USER INFO */}
-
-              <div className="absolute bottom-28 right-20 left-6">
-                <div className="mb-3 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold backdrop-blur">
-                  #{video.category}
+              <div className="absolute bottom-28 right-20 left-5">
+                <div className="mb-3 inline-block rounded-full bg-white/10 px-4 py-2 text-[10px] font-bold backdrop-blur">
+                  #
+                  {
+                    video.category
+                  }
                 </div>
 
                 <h2 className="text-xl font-black">
-                  {video.user}
+                  {video.creator}
+
                   <span className="mr-2 text-blue-400">
                     ✓
                   </span>
                 </h2>
 
-                <p className="mt-2 max-w-md text-sm text-zinc-200">
+                <p className="mt-2 text-sm text-zinc-200">
                   {video.title}
                 </p>
 
-                <p className="mt-2 text-[10px] text-zinc-400">
-                  VIDEXA AI • HD VIDEO
-                </p>
+                <a
+                  href={
+                    video.creatorUrl
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block text-[10px] text-zinc-500 underline"
+                >
+                  صاحب الفيديو على
+                  Pexels
+                </a>
               </div>
-
-              {/* ACTIONS */}
 
               <div className="absolute bottom-28 right-4 flex flex-col items-center gap-5">
                 <button
                   onClick={() =>
-                    likeVideo(video.id)
+                    toggleLike(
+                      video
+                    )
                   }
                   className="flex flex-col items-center"
                 >
-                  <span
-                    className={`text-3xl transition ${
-                      likedVideos.includes(
-                        video.id
-                      )
-                        ? "scale-110"
-                        : ""
-                    }`}
-                  >
-                    {likedVideos.includes(
+                  <span className="text-3xl">
+                    {liked.includes(
                       video.id
                     )
                       ? "❤️"
                       : "🤍"}
                   </span>
 
-                  <span className="mt-1 text-[10px] font-bold">
+                  <span className="text-[10px] font-bold">
                     {video.likes.toLocaleString()}
                   </span>
                 </button>
@@ -460,14 +665,16 @@ export default function Page() {
                     💬
                   </span>
 
-                  <span className="mt-1 text-[10px] font-bold">
+                  <span className="text-[10px] font-bold">
                     {video.comments.toLocaleString()}
                   </span>
                 </button>
 
                 <button
                   onClick={() =>
-                    shareVideo(video)
+                    shareVideo(
+                      video
+                    )
                   }
                   className="flex flex-col items-center"
                 >
@@ -475,64 +682,68 @@ export default function Page() {
                     ↗️
                   </span>
 
-                  <span className="mt-1 text-[10px] font-bold">
+                  <span className="text-[10px] font-bold">
                     {video.shares.toLocaleString()}
                   </span>
                 </button>
 
                 <button
                   onClick={() =>
-                    downloadVideo(video)
+                    downloadVideo(
+                      video
+                    )
                   }
-                  className="mt-2 flex flex-col items-center"
+                  className="flex flex-col items-center"
                 >
-                  <span
-                    className={`text-3xl ${
-                      vip
-                        ? "text-green-400"
-                        : "opacity-50"
-                    }`}
-                  >
+                  <span className="text-3xl">
                     {vip
                       ? "📥"
                       : "🔒"}
                   </span>
 
-                  <span className="mt-1 text-[10px] font-bold">
+                  <span className="text-[10px] font-bold">
                     {vip
                       ? "تحميل"
                       : "VIP"}
                   </span>
                 </button>
               </div>
-
-              {/* ACTIVE INDICATOR */}
-
-              {activeVideo === index && (
-                <div className="absolute left-4 top-28 rounded-full bg-black/50 px-3 py-1 text-[9px] backdrop-blur">
-                  ▶ الآن
-                </div>
-              )}
-            </article>
+            </section>
           )
         )}
-      </section>
 
-      {/* CREATE BUTTON */}
+        {loadingMore && (
+          <div className="flex h-32 items-center justify-center bg-black">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+          </div>
+        )}
+
+        {!hasMore &&
+          videos.length > 0 && (
+            <div className="flex h-32 items-center justify-center bg-black text-xs text-zinc-600">
+              لا توجد نتائج إضافية لهذه
+              الفئة حاليًا.
+            </div>
+          )}
+      </div>
 
       <button
         onClick={() =>
           setCreateOpen(true)
         }
-        className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 px-7 py-4 font-black shadow-[0_0_35px_rgba(168,85,247,.45)] transition hover:scale-105 active:scale-95"
+        className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-9 py-4 font-black shadow-[0_0_35px_rgba(168,85,247,.5)]"
       >
         ✨ إنشاء فيديو
       </button>
 
-      {/* SIDE MENU */}
+      {error && (
+        <div className="fixed bottom-24 left-4 right-4 z-[100] rounded-2xl border border-red-500/20 bg-red-950/95 p-4 text-center text-xs text-red-200">
+          {error}
+        </div>
+      )}
 
       {menuOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/95 p-6 backdrop-blur-xl">
+        <div className="fixed inset-0 z-[200] bg-black/95 p-6 backdrop-blur-xl">
           <div className="mx-auto max-w-lg">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black">
@@ -543,13 +754,13 @@ export default function Page() {
                 onClick={() =>
                   setMenuOpen(false)
                 }
-                className="text-3xl text-zinc-400"
+                className="text-3xl text-zinc-500"
               >
                 ×
               </button>
             </div>
 
-            <div className="mt-12 flex flex-col gap-6 text-xl font-bold">
+            <div className="mt-12 flex flex-col gap-7 text-xl font-bold">
               <button
                 onClick={() =>
                   setMenuOpen(false)
@@ -560,9 +771,12 @@ export default function Page() {
               </button>
 
               <button
-                onClick={() =>
-                  setMenuOpen(false)
-                }
+                onClick={() => {
+                  setMenuOpen(false);
+                  setCategory(
+                    "تقنية"
+                  );
+                }}
                 className="text-right"
               >
                 🔎 استكشف
@@ -571,7 +785,9 @@ export default function Page() {
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  setCreateOpen(true);
+                  setCreateOpen(
+                    true
+                  );
                 }}
                 className="text-right"
               >
@@ -581,31 +797,31 @@ export default function Page() {
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  setPaymentOpen(true);
+                  setPaymentOpen(
+                    true
+                  );
                 }}
                 className="text-right text-purple-400"
               >
-                👑 الاشتراك VIP
+                👑 VIP
               </button>
 
               <a
                 href="https://www.pexels.com/"
                 target="_blank"
                 rel="noreferrer"
-                className="text-right"
+                className="text-right text-zinc-400"
               >
-                🎞️ مصدر الفيديوهات
+                🎞️ Pexels
               </a>
             </div>
           </div>
         </div>
       )}
 
-      {/* CREATE MODAL */}
-
       {createOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/95 p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-900 p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black">
                 🎬 إنشاء فيديو AI
@@ -613,7 +829,9 @@ export default function Page() {
 
               <button
                 onClick={() =>
-                  setCreateOpen(false)
+                  setCreateOpen(
+                    false
+                  )
                 }
                 className="text-2xl text-zinc-500"
               >
@@ -621,26 +839,23 @@ export default function Page() {
               </button>
             </div>
 
-            <p className="mt-2 text-xs text-zinc-500">
-              اكتب وصف الفيديو الذي تريد
-              إنشاءه.
-            </p>
-
             <textarea
               value={prompt}
-              onChange={(event) =>
+              onChange={(e) =>
                 setPrompt(
-                  event.target.value
+                  e.target.value
                 )
               }
-              placeholder="مثال: مدينة مستقبلية ضخمة فوق السحاب، طائرات تحلق بين الأبراج، إضاءة سينمائية..."
-              className="mt-5 h-40 w-full resize-none rounded-2xl border border-white/10 bg-black p-4 text-sm outline-none transition focus:border-purple-500"
+              placeholder="اكتب وصف الفيديو..."
+              className="mt-5 h-40 w-full resize-none rounded-2xl border border-white/10 bg-black p-4 text-sm outline-none focus:border-purple-500"
             />
 
             <button
-              onClick={generateVideo}
+              onClick={
+                generateVideo
+              }
               disabled={generating}
-              className="mt-4 w-full rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 font-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-4 w-full rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 font-black disabled:opacity-50"
             >
               {generating
                 ? "⏳ جاري المعالجة..."
@@ -650,12 +865,9 @@ export default function Page() {
         </div>
       )}
 
-      {/* PAYMENT MODAL */}
-
       {paymentOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-black/95 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-900 p-6 shadow-2xl">
-
+        <div className="fixed inset-0 z-[220] flex items-center justify-center overflow-y-auto bg-black/95 p-4">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-900 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-4xl">
@@ -665,15 +877,13 @@ export default function Page() {
                 <h2 className="mt-2 text-2xl font-black">
                   VIDEXA VIP
                 </h2>
-
-                <p className="text-xs text-zinc-500">
-                  افتح ميزات VIP
-                </p>
               </div>
 
               <button
                 onClick={() =>
-                  setPaymentOpen(false)
+                  setPaymentOpen(
+                    false
+                  )
                 }
                 className="text-2xl text-zinc-500"
               >
@@ -681,28 +891,32 @@ export default function Page() {
               </button>
             </div>
 
-            {/* PLANS */}
-
             <div className="mt-6 grid grid-cols-2 gap-2">
               <button
                 onClick={() =>
-                  setPaymentMethod("USDT")
+                  setPaymentMethod(
+                    "USDT"
+                  )
                 }
                 className={`rounded-xl py-3 text-xs font-black ${
-                  paymentMethod === "USDT"
+                  paymentMethod ===
+                  "USDT"
                     ? "bg-purple-600"
                     : "bg-white/5"
                 }`}
               >
-                💎 USDT TRC20
+                💎 USDT
               </button>
 
               <button
                 onClick={() =>
-                  setPaymentMethod("BANKAK")
+                  setPaymentMethod(
+                    "BANKAK"
+                  )
                 }
                 className={`rounded-xl py-3 text-xs font-black ${
-                  paymentMethod === "BANKAK"
+                  paymentMethod ===
+                  "BANKAK"
                     ? "bg-purple-600"
                     : "bg-white/5"
                 }`}
@@ -713,76 +927,48 @@ export default function Page() {
 
             {paymentMethod ===
               "USDT" && (
-              <div className="mt-5 rounded-2xl border border-white/10 bg-black/50 p-5">
+              <div className="mt-5 rounded-2xl bg-black p-5">
+                <p className="text-center text-3xl font-black text-purple-400">
+                  {USDT_PRICE} USDT
+                </p>
 
-                <div className="text-center">
-                  <div className="text-2xl font-black text-purple-400">
-                    {USDT_PRICE} USDT
-                  </div>
+                <p className="mt-1 text-center text-xs text-zinc-500">
+                  شبكة TRC20
+                </p>
 
-                  <div className="mt-1 text-xs text-zinc-500">
-                    شبكة TRC20
-                  </div>
-                </div>
-
-                <div className="mt-5">
-                  <label className="text-[10px] text-zinc-500">
-                    عنوان المحفظة
-                  </label>
-
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      readOnly
-                      value={
-                        USDT_ADDRESS
-                      }
-                      className="min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-950 p-3 font-mono text-[10px]"
-                    />
-
-                    <button
-                      onClick={() =>
-                        copyValue(
-                          USDT_ADDRESS,
-                          "usdt"
-                        )
-                      }
-                      className="rounded-xl bg-white px-3 text-[10px] font-black text-black"
-                    >
-                      {copied ===
-                      "usdt"
-                        ? "✓"
-                        : "نسخ"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-5 rounded-xl bg-purple-500/10 p-4 text-center">
-                  <p className="text-xs leading-6 text-zinc-300">
-                    أرسل
-                    <strong className="mx-1 text-white">
-                      {USDT_PRICE} USDT
-                    </strong>
-                    إلى العنوان أعلاه باستخدام شبكة
-                    <strong className="mx-1 text-purple-400">
-                      TRC20
-                    </strong>
-                    .
+                <div className="mt-5 rounded-xl border border-white/10 bg-zinc-950 p-3">
+                  <p className="break-all font-mono text-[10px] text-zinc-300">
+                    {USDT_ADDRESS}
                   </p>
                 </div>
 
+                <button
+                  onClick={() =>
+                    copyText(
+                      USDT_ADDRESS,
+                      "usdt"
+                    )
+                  }
+                  className="mt-3 w-full rounded-xl bg-white py-3 text-xs font-black text-black"
+                >
+                  {copied ===
+                  "usdt"
+                    ? "✓ تم النسخ"
+                    : "نسخ عنوان USDT"}
+                </button>
+
                 <p className="mt-4 text-center text-[10px] leading-5 text-zinc-500">
-                  بعد التحويل، احتفظ بـ Transaction
-                  Hash لاستخدامه عند إضافة التحقق
-                  الخلفي.
+                  بعد التحويل احتفظ
+                  برقم Transaction Hash
+                  للتحقق من الدفع.
                 </p>
               </div>
             )}
 
             {paymentMethod ===
               "BANKAK" && (
-              <div className="mt-5 rounded-2xl border border-white/10 bg-black/50 p-5">
-
-                <div className="flex items-center justify-between">
+              <div className="mt-5 rounded-2xl bg-black p-5">
+                <div className="flex justify-between">
                   <span className="font-bold">
                     بنكك
                   </span>
@@ -793,8 +979,7 @@ export default function Page() {
                   </span>
                 </div>
 
-                <div className="mt-4 rounded-xl bg-zinc-950 p-4">
-
+                <div className="mt-5 rounded-xl bg-zinc-950 p-4">
                   <p className="text-[10px] text-zinc-500">
                     اسم المستفيد
                   </p>
@@ -807,77 +992,79 @@ export default function Page() {
                     رقم الحساب
                   </p>
 
-                  <div className="mt-1 flex items-center gap-2">
-                    <p className="font-mono font-black">
-                      {BANKAK_ACCOUNT}
-                    </p>
-
-                    <button
-                      onClick={() =>
-                        copyValue(
-                          BANKAK_ACCOUNT,
-                          "bankak"
-                        )
-                      }
-                      className="rounded-lg bg-white px-2 py-1 text-[9px] font-black text-black"
-                    >
-                      {copied ===
-                      "bankak"
-                        ? "✓"
-                        : "نسخ"}
-                    </button>
-                  </div>
+                  <p className="mt-1 font-mono font-black">
+                    {BANKAK_ACCOUNT}
+                  </p>
                 </div>
+
+                <button
+                  onClick={() =>
+                    copyText(
+                      BANKAK_ACCOUNT,
+                      "bankak"
+                    )
+                  }
+                  className="mt-3 w-full rounded-xl bg-white py-3 text-xs font-black text-black"
+                >
+                  {copied ===
+                  "bankak"
+                    ? "✓ تم النسخ"
+                    : "نسخ رقم بنكك"}
+                </button>
 
                 <input
                   value={
                     bankakReference
                   }
-                  onChange={(event) =>
+                  onChange={(e) =>
                     setBankakReference(
-                      event.target.value
+                      e.target.value
                     )
                   }
                   placeholder="رقم العملية بعد التحويل"
-                  className="mt-4 w-full rounded-xl border border-white/10 bg-zinc-950 p-3 text-xs outline-none focus:border-purple-500"
+                  className="mt-3 w-full rounded-xl border border-white/10 bg-zinc-950 p-3 text-xs outline-none focus:border-purple-500"
                 />
 
                 <button
-                  onClick={submitBankak}
+                  onClick={
+                    sendBankakPayment
+                  }
                   className="mt-3 w-full rounded-xl bg-purple-600 py-3 text-xs font-black"
                 >
                   إرسال إثبات الدفع
                 </button>
-
               </div>
             )}
 
-            {/* VIP FEATURES */}
-
             <div className="mt-5 grid grid-cols-2 gap-2">
-              {[
-                "📥 تحميل الفيديو",
-                "🎬 إنشاء محتوى",
-                "⚡ أولوية المعالجة",
-                "✨ جودة أعلى",
-              ].map((feature) => (
-                <div
-                  key={feature}
-                  className="rounded-xl border border-white/5 bg-white/5 p-3 text-center text-[10px]"
-                >
-                  {feature}
-                </div>
-              ))}
+              <div className="rounded-xl bg-white/5 p-3 text-center text-[10px]">
+                📥 تحميل الفيديو
+              </div>
+
+              <div className="rounded-xl bg-white/5 p-3 text-center text-[10px]">
+                🎬 إنشاء محتوى
+              </div>
+
+              <div className="rounded-xl bg-white/5 p-3 text-center text-[10px]">
+                ⚡ أولوية
+              </div>
+
+              <div className="rounded-xl bg-white/5 p-3 text-center text-[10px]">
+                ✨ جودة أعلى
+              </div>
             </div>
 
-            <p className="mt-5 text-center text-[9px] leading-5 text-zinc-600">
-              VIDEXA AI • جميع المدفوعات يجب
-              التحقق منها قبل تفعيل الاشتراك.
-            </p>
-
+            <a
+              href="https://www.pexels.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 block text-center text-[10px] text-zinc-500 underline"
+            >
+              Videos provided by Pexels
+            </a>
           </div>
         </div>
       )}
     </main>
   );
-              }
+            }
