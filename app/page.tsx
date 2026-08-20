@@ -15,7 +15,7 @@ const generateTemplates = () => {
     templates.push({ id: `t${id++}`, title: `${cat.name} ${i}`, category: cat.name, icon: cat.icon, prompt: `${cat.name} cinematic scene ${i}, 4k ultra realistic, dramatic lighting` });
   }}); return templates;
 };
-export const AI_TEMPLATES = generateTemplates();
+const AI_TEMPLATES = generateTemplates(); // شلت export من هنا
 
 export default function Page() {
   const [isPayOpen, setIsPayOpen] = useState(false);
@@ -29,15 +29,15 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("الكل");
 
-  // يجيب الفيديوهات من السيرفر حقنا
+  // يجيب الفيديوهات من السيرفر
   useEffect(() => {
     fetch("/api/videos")
-     .then(res => res.json())
-     .then(data => {
+    .then(res => res.json())
+    .then(data => {
         setVideos(data.videos || []);
         setLoading(false);
       })
-     .catch(() => setLoading(false));
+    .catch(() => setLoading(false));
   }, []);
 
   const filteredTemplates = filter === "الكل"? AI_TEMPLATES : AI_TEMPLATES.filter(t => t.category === filter);
@@ -151,4 +151,4 @@ export default function Page() {
       </div></div>}
     </main>
   );
-            }
+}
