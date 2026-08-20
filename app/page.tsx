@@ -1,8 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 
-// المفتاح حقك
-const PEXELS_API_KEY = "Un4TBtsno7YuZlMV6nqgKLvS1JDLMFZF0jRAfFGBco71eHZBElnBeq5";
+const PEXELS_API_KEY = process.env.NEXT_PUBLIC_PEXELS_KEY || "";
 
 const generateTemplates = () => {
   const categories = [
@@ -36,28 +35,32 @@ export default function Page() {
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const fetchVideos = async (pageNumber: number) => {
-    if (loading ||!hasMore) return; setLoading(true);
+    if (loading ||!hasMore ||!PEXELS_API_KEY) return;
+    setLoading(true);
     try {
-      const res = await fetch(`https://api.pexels.com/videos/search?query=cinematic+4k&per_page=15&page=${pageNumber}`,
+      const res = await fetch(`https://api.pexels.com/videos/popular?per_page=15&page=${pageNumber}`,
         { headers: { Authorization: PEXELS_API_KEY } });
+      if(!res.ok) throw new Error("API Error")
       const data = await res.json();
-      const titles = ["رحلة في الغابة","مدينة المستقبل","أسطورة المحارب","شروق جبلي","ليلة نيون","صحراء غامضة","محيط هائج","قلعة تاريخية"];
+      const titles = ["رحلة في الغابة","مدينة المستقبل","أسطورة المحارب","شروق جبلي","ليلة نيون","صحراء غامضة","محيط هائج","قلعة تاريخية","رقصة النار","مطر النيون"];
       const formatted = data.videos?.map((v: any, i: number) => ({
         id: `${v.id}-${pageNumber}`,
-        title: titles[Math.floor(Math.random()*titles.length)],
+        title: titles[i % titles.length],
         poster: v.image,
-        videoUrl: v.video_files.find((f: any) => f.quality === 'hd')?.link,
+        videoUrl: v.video_files.find((f: any) => f.quality === 'hd')?.link || v.video_files[0].link,
         views: `${(Math.random()*20+10).toFixed(1)}K`,
         likes: `${(Math.random()*2+0.5).toFixed(1)}K`,
-        duration: `0${Math.floor(Math.random()*4)+1}:${Math.floor(Math.random()*60).toString().padStart(2,'0')}`
+        duration: `0${Math.floor(v.duration/60)}:${(v.duration%60).toString().padStart(2,'0')}`
       })) || [];
-      if (pageNumber >= 2) setHasMore(false); setVideos(prev => [...prev,...formatted]);
-    } catch (e) { console.log(e) } setLoading(false);
+      if (data.videos.length < 15) setHasMore(false);
+      setVideos(prev => [...prev,...formatted]);
+    } catch (e) { console.log("Pexels Error:", e) }
+    setLoading(false);
   };
 
   useEffect(() => { fetchVideos(1) }, []);
   useEffect(() => {
-    const obs = new IntersectionObserver((e) => { if (e[0].isIntersecting &&!loading && hasMore) { setPage(p => { const n = p+1; fetchVideos(n); return n }) } }, {threshold: 1});
+    const obs = new IntersectionObserver((e) => { if (e[0].isIntersecting &&!loading && hasMore) { setPage(p => { const n = p+1; fetchVideos(n); return n }) } }, {threshold: 0.5});
     if(observerRef.current) obs.observe(observerRef.current);
     return () => { if(observerRef.current) obs.unobserve(observerRef.current) }
   }, [loading, hasMore]);
@@ -94,7 +97,7 @@ export default function Page() {
 
       <div className="max-w-md mx-auto px-4 space-y-5 pt-2">
         <div className="relative rounded-3xl overflow-hidden h-48 bg-cover bg-center" style={{backgroundImage: "url(https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070)"}}>
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4 flex-col justify-end">
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4 flex flex-col justify-end">
             <h2 className="text-2xl font-black">حوّل فكرتك إلى <br/><span className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">مشهد سينمائي</span></h2>
             <button onClick={()=>setIsCreateOpen(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-xl text-xs font-bold w-fit mt-2 flex items-center gap-1">✨ إنشاء فيديو</button>
             <div className="flex gap-2 mt-3">
@@ -119,6 +122,7 @@ export default function Page() {
             <h3 className="text-sm font-bold">الفيديوهات الرائجة</h3>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
+            {videos.length === 0 &&!loading && <p className="text-xs text-zinc-500">تأكد من اضافة المفتاح في Vercel</p>}
             {videos.slice(0,6).map(v=>(
               <div key={v.id} onClick={()=>setSelectedVideo(v.videoUrl)} className="relative min-w-[140px] rounded-2xl overflow-hidden cursor-pointer">
                 <img src={v.poster} className="h-48 w-full object-cover"/>
@@ -195,7 +199,7 @@ export default function Page() {
       </nav>
 
       {selectedVideo && <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"><div className="relative w-full max-w-sm"><button onClick={()=>setSelectedVideo(null)} className="absolute top-4 right-4 bg-red-600 w-8 h-8 rounded-full">✕</button><video src={selectedVideo} controls autoPlay className="w-full rounded-2xl"/></div></div>}
-      {isCreateOpen && <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><div className="bg-zinc-900 border-purple-500/40 p-5 rounded-2xl max-w-sm w-full space-y-3">
+      {isCreateOpen && <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><div className="bg-zinc-900 border border-purple-500/40 p-5 rounded-2xl max-w-sm w-full space-y-3">
         <h3 className="text-base font-black text-center">إنشاء فيديو AI ✨</h3>
         <textarea value={promptText} onChange={(e)=>setPromptText(e.target.value)} placeholder="اكتب وصف المشهد..." className="w-full h-24 bg-black border-zinc-700 rounded-xl p-3 text-xs"/>
         <button onClick={handleGenerateAI} disabled={isGenerating} className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold">{isGenerating?'جاري التوليد...':'توليد 4K 🚀'}</button>
@@ -218,11 +222,11 @@ export default function Page() {
           <select value={paymentMethod} onChange={(e)=>setPaymentMethod(e.target.value)} className="w-full bg-black border-zinc-700 rounded-lg p-2 text-xs" required>
             <option value="">اختر طريقة الدفع</option><option value="bankak">بنكك 35,000 ج</option><option value="binance">بينانس 9.99 USDT</option>
           </select>
-          <input type="file" onChange={(e)=>setReceiptFile(e.target.files?.[0]||null)} className="w-full bg-black border-zinc-700 rounded-lg p-2 text-xs" required/>
+          <input type="file" onChange={(e)=>setReceiptFile(e.target.files?.[0]||null)} className="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs" required/>
           <button type="submit" className="w-full py-3 bg-gradient-to-r from-amber-500 to-pink-600 rounded-xl font-bold">ارسال للمراجعة</button>
         </form>
         <button onClick={()=>setIsPayOpen(false)} className="w-full text-center text-xs">إلغاء</button>
       </div></div>}
     </main>
   );
-          }
+}
