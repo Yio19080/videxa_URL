@@ -130,18 +130,65 @@ export default function Page() {
       </div>
 
       {/* نافذة التعليقات */}
-      {isCommentsOpen && <div className="fixed inset-0 z-50 bg-black/90 flex-col justify-end"><div className="bg-zinc-900 h-3/4 rounded-t-2xl p-4">
-        <div className="flex justify-between mb-3">
-          <h3 className="font-bold">التعليقات {activeVideo?.comments}</h3>
-          <button onClick={()=>setIsCommentsOpen(false)}>✕</button>
+      {isCommentsOpen && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col justify-end">
+          <div className="bg-zinc-900 h-3/4 rounded-t-2xl p-4 flex flex-col">
+            <div className="flex justify-between mb-3 items-center">
+              <h3 className="font-bold">التعليقات {activeVideo?.comments}</h3>
+              <button onClick={()=>setIsCommentsOpen(false)} className="text-zinc-400 hover:text-white">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-3">
+              <p className="text-xs">🔥 فيديو رهيب</p>
+              <p className="text-xs">4K خرافي</p>
+              <p className="text-xs">عايز اعمل زيو كيف</p>
+            </div>
+            <input placeholder="اضف تعليق..." className="w-full bg-black border border-zinc-700 rounded-xl p-2 text-xs mt-2 text-white focus:outline-none"/>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto space-y-3">
-          <p className="text-xs">🔥 فيديو رهيب</p>
-          <p className="text-xs">4K خرافي</p>
-          <p className="text-xs">عايز اعمل زيو كيف</p>
-        </div>
-        <input placeholder="اضف تعليق..." className="w-full bg-black border-zinc-700 rounded-xl p-2 text-xs mt-2"/>
-      </div></div>}
+      )}
 
       {/* نافذة الانشاء */}
-      {isCreateOpen && <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"><div className="bg-zinc-900 p-
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 w-full max-w-md p-5 rounded-2xl border border-zinc-800">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">إنشاء فيديو بالذكاء الاصطناعي 🎬</h3>
+              <button onClick={()=>setIsCreateOpen(false)} className="text-zinc-400 hover:text-white">✕</button>
+            </div>
+            <textarea 
+              value={promptText}
+              onChange={(e)=>setPromptText(e.target.value)}
+              placeholder="اكتب وصف المشهد بالتفصيل (مثلاً: رائد فضاء يسير على المريخ)..." 
+              className="w-full h-28 bg-black border border-zinc-700 rounded-xl p-3 text-sm text-white resize-none mb-4 focus:outline-none focus:border-purple-500"
+            />
+            <button 
+              onClick={handleGenerateAI}
+              disabled={isGenerating}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-xl font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+            >
+              {isGenerating ? "جاري التوليد..." : "توليد الفيديو 🚀"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة الدفع / الترقية VIP */}
+      {isPayOpen && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 w-full max-w-md p-5 rounded-2xl border border-zinc-800 text-center">
+            <h3 className="font-bold text-xl mb-2">الترقية إلى VIP 👑</h3>
+            <p className="text-xs text-zinc-400 mb-4">احصل على توليد غير محدود وفيديوهات بجودة 4K فائقة.</p>
+            <button 
+              onClick={()=>{ setIsVip(true); setIsPayOpen(false); alert("تمت الترقية بنجاح! 🎉"); }}
+              className="w-full bg-amber-500 text-black py-3 rounded-xl font-bold mb-2 hover:bg-amber-400 transition"
+            >
+              اشتراك الآن
+            </button>
+            <button onClick={()=>setIsPayOpen(false)} className="text-xs text-zinc-500 mt-2">إلغاء</button>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
