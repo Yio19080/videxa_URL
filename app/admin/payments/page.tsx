@@ -2,53 +2,77 @@
 
 import React, { useState } from "react";
 
-interface VideoFeed {
+interface PaymentRecord {
   id: string;
   user: string;
-  videoUrl: string;
-  likes: number;
-  views: number;
-  isAd?: boolean;
+  method: "BANKAK" | "BINANCE";
+  amount: string;
+  ref: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
 }
 
-const mockFeed: VideoFeed[] = [
-  { id: "v1", user: "@ahmed_ai", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-background-1610-large.mp4", likes: 1200, views: 45000 },
-  { id: "v2", user: "@sara_design", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-screens-41440-large.mp4", likes: 3400, views: 89000 },
-  { id: "ad1", user: "إعلان Videxa Pro", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smartphone-41434-large.mp4", likes: 999, views: 100000, isAd: true },
-  { id: "v3", user: "@mona_editor", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-futuristic-robotic-arm-40896-large.mp4", likes: 850, views: 23000 },
+const initialPayments: PaymentRecord[] = [
+  { id: "PAY-101", user: "user1@example.com", method: "BANKAK", amount: "35,000 SDG", ref: "TXN-8849302", status: "PENDING" },
+  { id: "PAY-102", user: "user2@example.com", method: "BINANCE", amount: "10 USDT", ref: "0x39a...e41", status: "PENDING" }
 ];
 
-export default function DiscoverPage() {
-  const [likes, setLikes] = useState<Record<string, number>>({});
+export default function AdminPaymentsPage() {
+  const [payments, setPayments] = useState(initialPayments);
 
-  const handleLike = (id: string, current: number) => {
-    setLikes((prev) => ({ ...prev, [id]: (prev[id] || current) + 1 }));
+  const updateStatus = (id: string, newStatus: "APPROVED" | "REJECTED") => {
+    setPayments((prev) => prev.map((p) => p.id === id ? { ...p, status: newStatus } : p));
   };
 
   return (
-    <div className="min-h-screen bg-black text-white snap-y snap-mandatory overflow-y-scroll h-screen dir-rtl">
-      {mockFeed.map((item) => (
-        <div key={item.id} className="snap-start w-full h-screen relative flex items-center justify-center bg-slate-950">
-          <video src={item.videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover max-w-md" />
-          
-          {/* Overlay Details */}
-          <div className="absolute bottom-12 right-4 left-4 max-w-md mx-auto flex justify-between items-end p-4 bg-gradient-to-t from-black/80 to-transparent rounded-b-2xl">
-            <div className="space-y-2">
-              <span className="font-bold text-yellow-400 text-sm">{item.user}</span>
-              {item.isAd && (
-                <span className="bg-yellow-500 text-black text-xs font-black px-2 py-0.5 rounded ml-2">إعلان رعاية</span>
-              )}
-              <p className="text-xs text-slate-300">المشاهدات: {item.views.toLocaleString()}</p>
-            </div>
-            <button 
-              onClick={() => handleLike(item.id, item.likes)} 
-              className="bg-slate-900/80 p-3 rounded-full border border-slate-700 text-yellow-500 font-bold text-xs"
-            >
-              ❤️ {likes[item.id] || item.likes}
-            </button>
-          </div>
-        </div>
-      ))}
+    <div className="min-h-screen bg-slate-950 text-white dir-rtl p-6 max-w-6xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold text-yellow-500">لوحة الأدمن - مراجعة التحويلات اليدوية</h1>
+
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+        <table className="w-full text-right text-sm text-slate-300">
+          <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+            <tr>
+              <th className="p-4">معرف الطلب</th>
+              <th className="p-4">المستخدم</th>
+              <th className="p-4">طريقة الدفع</th>
+              <th className="p-4">المبلغ</th>
+              <th className="p-4">رقم العملية</th>
+              <th className="p-4">الحالة</th>
+              <th className="p-4">الإجراء</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800">
+            {payments.map((p) => (
+              <tr key={p.id}>
+                <td className="p-4 font-mono">{p.id}</td>
+                <td className="p-4">{p.user}</td>
+                <td className="p-4 font-bold">{p.method}</td>
+                <td className="p-4 text-emerald-400 font-bold">{p.amount}</td>
+                <td className="p-4 font-mono text-xs">{p.ref}</td>
+                <td className="p-4">
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    p.status === "APPROVED" ? "bg-emerald-500/20 text-emerald-400" :
+                    p.status === "REJECTED" ? "bg-red-500/20 text-red-400" : "bg-yellow-500/20 text-yellow-400"
+                  }`}>
+                    {p.status}
+                  </span>
+                </td>
+                <td className="p-4 flex gap-2">
+                  {p.status === "PENDING" && (
+                    <>
+                      <button onClick={() => updateStatus(p.id, "APPROVED")} className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded font-bold text-xs">
+                        تأكيد
+                      </button>
+                      <button onClick={() => updateStatus(p.id, "REJECTED")} className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded font-bold text-xs">
+                        رفض
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
